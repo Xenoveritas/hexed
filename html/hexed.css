@@ -1,0 +1,8 @@
+.hex-file {
+  font-family: Consolas, Courier, monospace;
+}
+
+.linenum {
+  float: left;
+  width: 4em;
+}
