@@ -2,7 +2,26 @@
   font-family: Consolas, Courier, monospace;
 }
 
-.linenum {
+.gutter {
   float: left;
-  width: 4em;
+  padding-right: 0.5em;
+  margin-right: 0.5em;
+  border-right: solid 1px #808080;
+}
+
+.hex {
+  margin: 0 0.5em;
+  white-space: pre;
+  float: left;
+}
+
+.decode {
+  float: left;
+  padding-left: 0.5em;
+  margin-left: 0.5em;
+  border-left: solid 1px #808080;
+}
+
+.offset-number {
+  text-align: right;
 }
