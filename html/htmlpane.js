@@ -7,7 +7,12 @@ function FilePane(id, filename) {
   var container = document.createElement('div');
   this._container = container;
   this._container.className = 'hex-file';
-  document.getElementById('master-container').appendChild(container);
+  document.getElementById('main-tab-contents').appendChild(container);
+  this._hexContents = document.createElement('div');
+  this._hexContents.className = 'contents';
+  this._container.appendChild(this._hexContents);
+  this._container.appendChild(this._statusBar = document.createElement('div'))
+  this._statusBar.className = 'status-bar';
   this._loadingIndicator = document.createElement('div');
   this._loadingIndicator.className = 'loading';
   this._loadingIndicator.appendChild(document.createTextNode('Loading ' + filename + '...'));
@@ -31,6 +36,10 @@ FilePane.prototype = {
   _init: function() {
     this.loadChunk(0);
   },
+  /**
+   * Formats a single byte. Basically convert a byte into two upper-case hex
+   * characters.
+   */
   _formatByte: function(byte) {
     var s = byte.toString(16).toUpperCase();
     return s.length == 1 ? "0" + s : s;
@@ -66,9 +75,9 @@ FilePane.prototype = {
       this._hexDiv.className = 'hex';
       this._decodeDiv = document.createElement('div');
       this._decodeDiv.className = 'decode';
-      this._container.appendChild(this._gutterDiv);
-      this._container.appendChild(this._hexDiv);
-      this._container.appendChild(this._decodeDiv);
+      this._hexContents.appendChild(this._gutterDiv);
+      this._hexContents.appendChild(this._hexDiv);
+      this._hexContents.appendChild(this._decodeDiv);
     }
     var offset = index * hexfile.CHUNK_SIZE, line, hex, decoded, linenum;
     for (var i = 0; i < chunk.length;) {
@@ -97,6 +106,7 @@ FilePane.prototype = {
    * as we're concerned.
    */
   loadChunk: function(index) {
+    this._statusBar.innerText = 'Size: ' + this.file.size + ' (loading: ' + (((index * hexfile.CHUNK_SIZE) / this.file.size) * 100).toFixed(1) + '%)';
     if (index > MAX_SAFE_INDEX) {
       alert("File size is too large, truncating.");
       return;
@@ -106,15 +116,36 @@ FilePane.prototype = {
       if (buffer != null) {
         me._appendChunk(index, buffer);
         me.loadChunk(index + 1);
+      } else {
+        me._statusBar.innerText = 'Size: ' + me.file.size;
       }
     });
+  },
+  close: function() {
+    this._container.remove();
+  },
+  runJavaScript: function() {
+    // Display a modal
   }
 };
 
 var ipc = require('ipc');
+var path = require('path');
+
+var activePane = null;
 
 ipc.on('pane-open', function(id, filename) {
   // Currently we don't support tabs so opening a new pane really means "replace
   // the existing one"
-  new FilePane(id, filename);
+  if (activePane) {
+    activePane.close();
+  }
+  activePane = new FilePane(id, filename);
+  document.title = path.basename(filename) + ' - Hexed';
+});
+
+ipc.on('menu', function(menu) {
+  if (menu == 'run-javascript') {
+    prompt('Enter some stuff.');
+  }
 });

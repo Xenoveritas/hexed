@@ -1,9 +1,94 @@
+html, body {
+  /* Default font */
+  font-family: "Segoe UI", "Lucidia Grande", sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #FFF;
+  color: #000;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs {
+  display: block;
+  background-color: #C0C0C0;
+  flex-shrink: 0;
+}
+
+.tabs ul {
+  display: flex;
+  flex-direction: row;
+  overflow: hide;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.tabs ul li {
+  display: block;
+  padding: 4px 24px;
+  border: solid 1px #000;
+  border-left: none;
+  background-color: #E0E0E0;
+  color: #808080;
+}
+
+.tabs ul li:first-child {
+  border-left: solid 1px #000;
+}
+
+.tabs ul li.active {
+  background-color: #EFEFEF;
+  color: #333;
+  border-bottom-color: #EFEFEF;
+}
+
+.tab-contents {
+  display: flex;
+  flex-grow: 1;
+}
+
 .hex-file {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.hex-file .contents {
   font-family: Consolas, Courier, monospace;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  padding: 5pt;
+  overflow-y: scroll;
+}
+
+.hex-file .script {
+
+}
+
+.hex-file .jump-to {
+
+}
+
+.hex-file .status-bar {
+
+}
+
+.status-bar {
+  background-color: #C0C0C0;
+  color: #000;
+  font-size: 80%;
+  padding: 4px;
+  flex-shrink: 0;
 }
 
 .gutter {
-  float: left;
   padding-right: 0.5em;
   margin-right: 0.5em;
   border-right: solid 1px #808080;
@@ -12,11 +97,9 @@
 .hex {
   margin: 0 0.5em;
   white-space: pre;
-  float: left;
 }
 
 .decode {
-  float: left;
   padding-left: 0.5em;
   margin-left: 0.5em;
   border-left: solid 1px #808080;

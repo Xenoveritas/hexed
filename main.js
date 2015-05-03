@@ -11,8 +11,11 @@ var mainWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
-  if (process.platform != 'darwin')
+  console.log("All windows are closed");
+  if (process.platform != 'darwin') {
+    console.log("This isn't OS X, quitting");
     app.quit();
+  }
 });
 
 // This method will be called when Electron has done everything
@@ -20,43 +23,7 @@ app.on('window-all-closed', function() {
 app.on('ready', function() {
   var Menu = require('menu');
   // Build our menu
-  var menu = Menu.buildFromTemplate([
-    {
-      label: 'File',
-      submenu: [
-        {
-          label: 'Open...',
-          accelerator: 'Ctrl+O',
-          click: function() { BrowserWindow.getFocusedWindow().hexed.showOpenDialog(); }
-        },
-        {
-          type: 'separator'
-        },
-        {
-          label: 'Exit',
-          click: function() {
-            // TODO: Not this
-            app.quit();
-          }
-        }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
-        {
-          label: 'Reload',
-          accelerator: 'Ctrl+R',
-          click: function() { BrowserWindow.getFocusedWindow().reloadIgnoringCache(); }
-        },
-        {
-          label: 'Toggle DevTools',
-          accelerator: 'Ctrl+Alt+I',
-          click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
-        },
-      ]
-    }
-  ]);
+  var menu = require('./lib/hex-menu').createMenu();
   Menu.setApplicationMenu(menu);
 
   // Create the browser window.

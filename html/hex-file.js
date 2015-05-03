@@ -34,8 +34,10 @@ HexFile.prototype = {
   },
   readChunk: function(index, callback) {
     var start = index * CHUNK_SIZE;
-    if (start >= this.size)
+    if (start >= this.size) {
       callback(new Error("Chunk " + index + " is past the end of file"));
+      return;
+    }
     var end = start + CHUNK_SIZE;
     if (end >= this.size)
       end = this.size - 1;
