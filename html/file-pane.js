@@ -61,6 +61,8 @@ FilePane.prototype = {
     }
   },
   _appendChunk: function(index, chunk) {
+    // TODO: Only load visible chunks. (No need to load the entire file into
+    // memory.)
     if (this._loadingIndicator) {
       // Remove the loading indicator
       this._loadingIndicator.remove();
@@ -129,23 +131,4 @@ FilePane.prototype = {
   }
 };
 
-var ipc = require('ipc');
-var path = require('path');
-
-var activePane = null;
-
-ipc.on('pane-open', function(id, filename) {
-  // Currently we don't support tabs so opening a new pane really means "replace
-  // the existing one"
-  if (activePane) {
-    activePane.close();
-  }
-  activePane = new FilePane(id, filename);
-  document.title = path.basename(filename) + ' - Hexed';
-});
-
-ipc.on('menu', function(menu) {
-  if (menu == 'run-javascript') {
-    prompt('Enter some stuff.');
-  }
-});
+module.exports = FilePane;

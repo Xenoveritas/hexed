@@ -42,14 +42,16 @@ HexFile.prototype = {
     if (end >= this.size)
       end = this.size - 1;
     var buffer = new Buffer(end - start);
-    this.read(buffer, start, callback);
+    this.read(buffer, start, buffer.length, callback);
   },
   /**
    * Reads a chunk of the file.
    */
-  read: function(buffer, offset, callback) {
+  read: function(buffer, offset, length, callback) {
+    // TODO (maybe): Cache the chunk? The OS should be doing that for us but you
+    // never know...
     var me = this;
-    fs.read(this.fd, buffer, 0, buffer.length, offset, function(err, bytesRead, buffer) {
+    fs.read(this.fd, buffer, 0, length, offset, function(err, bytesRead, buffer) {
       if (err)
         return err;
       if (bytesRead < buffer.length) {
@@ -60,8 +62,6 @@ HexFile.prototype = {
     });
   }
 }
-
-exports.CHUNK_SIZE = CHUNK_SIZE;
 
 exports.open = function(path, callback) {
   fs.open(path, 'r', function(err, fd) {

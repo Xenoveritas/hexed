@@ -65,7 +65,7 @@ body {
   display: flex;
   flex-direction: row;
   padding: 5pt;
-  overflow-y: scroll;
+  overflow-y: hidden;
 }
 
 .hex-file .script {
@@ -105,6 +105,16 @@ body {
   border-left: solid 1px #808080;
 }
 
+.gutter .dummy, .hex .dummy, .decode .dummy {
+  transform: translateX(-1000px) translateY(-1000px);
+}
+
 .offset-number {
   text-align: right;
+}
+
+.scrollbar .bar {
+  background: #666;
+  border-radius: 4px;
+  width: 8px;
 }
