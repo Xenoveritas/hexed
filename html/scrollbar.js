@@ -50,7 +50,7 @@ Scrollbar.prototype = {
       var barHeight = Math.max(10, (this.visibleArea / this.total) * this._scrollArea.offsetHeight);
       this._scrollBar.style.top = (this.position / (this.total - this.visibleArea)) * (this._scrollArea.offsetHeight - barHeight) + 'px';
       this._scrollBar.style.height = barHeight + 'px';
-      console.log("Visible: " + this.visibleArea + "; Total: " + this.total + " visible / total: " + this.visibleArea / this.total + "; height: " + this._scrollArea.offsetHeight);
+      //console.log("Visible: " + this.visibleArea + "; Total: " + this.total + " visible / total: " + this.visibleArea / this.total + "; height: " + this._scrollArea.offsetHeight);
     }
   }
 }

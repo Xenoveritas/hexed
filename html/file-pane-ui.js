@@ -30,7 +30,7 @@ function FileUI(id, file) {
   this._statusBar.className = 'status-bar';
   this._loadingIndicator = document.createElement('div');
   this._loadingIndicator.className = 'loading';
-  this._loadingIndicator.appendChild(document.createTextNode('Loading...'));
+  this._loadingIndicator.innerText = file.path + ' (' + file.size + ' bytes)';
   this._statusBar.appendChild(this._loadingIndicator);
   this._lines = [];
   // We need a dummy line to measure line metrics. This line must always be
@@ -38,7 +38,7 @@ function FileUI(id, file) {
   // we can calculate the number of visible lines but otherwise shouldn't be
   // actually visible.
   this._dummyLine = this._createLine();
-  this._dummyLine.setToDummy();
+  this._dummyLine.setToDummy(Math.floor(file.size / 16));
   this._hex.setAttribute("tabindex", "0");
   this._decoded.setAttribute("tabindex", "0");
   var keydown = (function(me) { return function(event) { me._onKeyDown(event); }; })(this);
@@ -49,7 +49,7 @@ function FileUI(id, file) {
     me.resized();
   }, false);
   this.file = file;
-  this._lastLine = Math.ceil(this.file.size / 16);
+  this._lastLine = Math.ceil(file.size / 16);
   // And now fire a resized that will create all visible lines and load them
   this.resized();
 }
@@ -68,8 +68,8 @@ FileUI.Line.prototype = {
   /**
    * Set the line data to be the "dummy" line.
    */
-  setToDummy: function() {
-    this.setOffset(0);
+  setToDummy: function(offset) {
+    this.setOffset(offset);
     this.setContent([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
     this._gutterDiv.className = 'dummy';
     this._hexDiv.className = 'dummy';
@@ -122,15 +122,24 @@ FileUI.prototype = {
       this._buffer = new Buffer(size);
     }
     var me = this, buffer = this._buffer, visibleLines = this._visibleLines;
-    this.file.read(buffer, offset, size, function(error, buffer) {
+    this.file.read(buffer, offset, size, function(error, buffer, totalRead) {
       if (error) {
         console.log("ERROR!");
         console.log(error);
       } else {
         // FIXME: What happens if a resize happens during a load event?
-        for (var i = 0; i < visibleLines; i++) {
-          me._lines[i].setOffset(offset + (i*16));
-          me._lines[i].setContent(buffer.slice(i*16, i*16+16));
+        var bytesPerLine = 16;
+        for (var i = 0, curOff = offset, curMax = offset + bytesPerLine, size = me.file.size;
+            i < visibleLines; i++, curOff += bytesPerLine, curMax += bytesPerLine) {
+          if (curOff <= size) {
+            me._lines[i].setOffset(curOff);
+            if (curMax >= size)
+              curMax = size - 1;
+            me._lines[i].setContent(buffer.slice(curOff - offset, curMax - offset));
+          } else {
+            me._lines[i].setOffset();
+            me._lines[i].setContent();
+          }
         }
       }
     })

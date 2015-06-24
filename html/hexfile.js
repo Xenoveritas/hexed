@@ -55,10 +55,10 @@ HexFile.prototype = {
       if (err)
         return err;
       if (bytesRead < buffer.length) {
-        // Can this happen?
-        console.log(" *** DID NOT FULLY READ ***");
+        // It looks like the only way this will happen is if we go off the end
+        // of the file. TODO: check to make sure that's true.
       }
-      callback(null, buffer);
+      callback(null, buffer, bytesRead);
     });
   }
 }
