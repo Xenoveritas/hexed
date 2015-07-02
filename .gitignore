@@ -1,2 +1,5 @@
-# Ignore the electron environment
-/electron/
+# Ignore anything Bower has installed
+/bower_components/
+
+# Ignore node modules
+/node_modules/
