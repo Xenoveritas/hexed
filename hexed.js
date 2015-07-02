@@ -7,7 +7,7 @@ var HexedWindow = require('./lib/hex-window');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the javascript object is GCed.
-var mainWindow = null;
+var hexedWindows = [];
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -18,6 +18,29 @@ app.on('window-all-closed', function() {
   }
 });
 
+function openNewWindow(files) {
+  // Create the browser window.
+  var newWindow = new HexedWindow();
+  hexedWindows.push(newWindow);
+  newWindow.once('ready', function() {
+    // Currently just open "whatever the first one is"
+    if (files && files.length > 0)
+      newWindow.open(files[0]);
+  });
+
+  // Emitted when the window is closed.
+  newWindow.on('closed', function() {
+    // Remove this window from the windows array
+    for (var i = 0; i < hexedWindows.length; i++) {
+      if (hexedWindows[i] === newWindow) {
+        // FIXME: Actually splice the array
+        hexedWindows[i] = null;
+        newWindow = null;
+      }
+    }
+  });
+}
+
 // This method will be called when Electron has done everything
 // initialization and ready for creating browser windows.
 app.on('ready', function() {
@@ -26,20 +49,12 @@ app.on('ready', function() {
   var menu = require('./lib/hex-menu').createMenu();
   Menu.setApplicationMenu(menu);
 
-  // Create the browser window.
-  mainWindow = new HexedWindow();
-  mainWindow.once('ready', function() {
-    // FIXME: Is this even remotely correct?
-    for (var i = 2; i < process.argv.length; i++) {
-      mainWindow.open(process.argv[i]);
-    }
-  });
-
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function() {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null;
-  });
+  var files = [];
+  // FIXME: Is this even remotely correct?
+  for (var i = 2; i < process.argv.length; i++) {
+    files.push(process.argv[i]);
+  }
+  openNewWindow(files);
 });
+
+module.exports.openNewWindow = openNewWindow;

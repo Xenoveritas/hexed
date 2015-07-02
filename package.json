@@ -1,7 +1,7 @@
 {
   "name": "hexed",
   "version": "0.0.0",
-  "main": "main.js",
+  "main": "hexed.js",
   "scripts": {
     "win": "node_modules\\electron-prebuilt\\dist\\electron .",
     "osx": "node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron ."
