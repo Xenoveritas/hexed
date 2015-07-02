@@ -28,8 +28,7 @@ app.on('ready', function() {
 
   // Create the browser window.
   mainWindow = new HexedWindow();
-  mainWindow.on('ready', function() {
-    console.log("Window is ready!");
+  mainWindow.once('ready', function() {
     // FIXME: Is this even remotely correct?
     for (var i = 2; i < process.argv.length; i++) {
       mainWindow.open(process.argv[i]);

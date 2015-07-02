@@ -13,6 +13,8 @@ var path = require('path');
 var activePane = null;
 
 ipc.on('pane-open', function(id, filename) {
+  // Kill the "no open file" bit if present
+  document.getElementById('main-tab-no-contents').style.display = 'none';
   // Currently we don't support tabs so opening a new pane really means "replace
   // the existing one"
   if (activePane) {
@@ -32,6 +34,10 @@ ipc.on('pane-open', function(id, filename) {
 ipc.on('menu', function(menu) {
   if (activePane == null)
     return;
+  if (menu == 'jump') {
+    // Ask for an address
+    activePane.showJumpDialog();
+  }
   if (menu == 'run-javascript') {
     activePane.showJavaScriptPane();
   }

@@ -4,6 +4,7 @@
  * every single line of bytes would - well, not work.
  */
 
+var bootbox = require('bootbox');
 var Scrollbar = require('./scrollbar');
 
 function FileUI(id, file) {
@@ -107,6 +108,22 @@ FileUI.Line.prototype = {
 };
 
 FileUI.prototype = {
+  /**
+   * Flag indicating that we're loading a chunk and therefore shouldn't trigger
+   * a new load.
+   */
+  _loadInProgress: false,
+  /**
+   * If a new load was triggered during a load, this indicates the new offset
+   * that needs to be loaded.
+   */
+  _queuedOffset: null,
+  /**
+   * Time in milliseconds before considering a load "slow" and updating the UI
+   * to indicate we're loading data.
+   */
+  _slowLoadWait: 100,
+  _slowLoadTimeout: null,
   _createLine: function(line) {
     return new FileUI.Line(this);
   },
@@ -114,6 +131,13 @@ FileUI.prototype = {
    * Move the start of the displayed information to the given offset.
    */
   _loadFrom: function(offset) {
+    if (this._loadInProgress) {
+      // If we're already loading, just "queue" this load request. Go ahead and
+      // blow away any other "queued" load requests - we just want to do the
+      // last one anyway.
+      this._queuedOffset = offset;
+      return;
+    }
     // Calculate the block we need to load
     var size = this._visibleLines * 16;
     // TODO (maybe): blank existing lines?
@@ -122,12 +146,21 @@ FileUI.prototype = {
       this._buffer = new Buffer(size);
     }
     var me = this, buffer = this._buffer, visibleLines = this._visibleLines;
+    this._loadInProgress = true;
     this.file.read(buffer, offset, size, function(error, buffer, totalRead) {
+      me._loadInProgress = false;
+      if (me._queuedOffset !== null) {
+        // Well, this was a waste of time.
+        // FIXME: Maybe it wasn't, if the request was part of the request, we
+        // should do that.
+        me._loadFrom(me._queuedOffset);
+        me._queuedOffset = null;
+        return;
+      }
       if (error) {
         console.log("ERROR!");
         console.log(error);
       } else {
-        // FIXME: What happens if a resize happens during a load event?
         var bytesPerLine = 16;
         for (var i = 0, curOff = offset, curMax = offset + bytesPerLine, size = me.file.size;
             i < visibleLines; i++, curOff += bytesPerLine, curMax += bytesPerLine) {
@@ -181,6 +214,9 @@ FileUI.prototype = {
       offset = this._lastLine;
     this._moveTo(offset);
   },
+  /**
+   * Move to a specific line.
+   */
   _moveTo: function(offset) {
     if (typeof offset != 'number' || isNaN(offset)) {
       return;
@@ -211,6 +247,21 @@ FileUI.prototype = {
       this._loadFrom(this._scrollBar.getPosition()*16);
     }
     // TODO (maybe): remove no longer needed lines?
+  },
+  showJumpDialog: function() {
+    var me = this;
+    bootbox.prompt("Jump to address", function(result) {
+      // Convert the string to a number using parseInt so that stuff like
+      // 0x1F works
+      var addr = parseInt(result);
+      if (addr >= 0 && addr < me.file.size) {
+        // More to trap NaN than anything else
+        me._moveTo(Math.floor(addr/16));
+      }
+    });
+  },
+  showJavaScriptPane: function() {
+    // does nothing (yet)
   }
 };
 
