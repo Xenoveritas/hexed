@@ -10,7 +10,41 @@ var hexfile = require('./hexfile');
 var ipc = require('ipc');
 var path = require('path');
 
+var windowId = null;
+
 var activePane = null;
+
+var contents = document.getElementById('main-tab-contents');
+contents.addEventListener('dragenter', function(event) {
+  // Check to see if the event is a file
+  if (event.dataTransfer.files.length == 1) {
+    event.dataTransfer.effectAllowed = 'move';
+  } else {
+    event.dataTransfer.effectAllowed = 'none';
+  }
+}, false);
+contents.addEventListener('dragover', function(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  return false;
+});
+contents.addEventListener('drop', function(event) {
+  console.log("Drop");
+  console.log(event);
+  if (event.dataTransfer.files.length > 0) {
+    // We actually want to notify our parent controller of this drop
+    var files = [];
+    for (var i = 0; i < event.dataTransfer.files.length; i++) {
+      files.push(event.dataTransfer.files[i].path);
+    }
+    ipc.send('file-dropped', windowId, files);
+  }
+}, false);
+
+ipc.on('set-id', function(id) {
+  console.log("Got id: " + id);
+  windowId = id;
+});
 
 ipc.on('pane-open', function(id, filename) {
   // Kill the "no open file" bit if present

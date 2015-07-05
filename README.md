@@ -9,3 +9,7 @@ Hexed is a hex editor (actually, right now, a hex *viewer* - no editing is possi
 Yep.
 
 It was also very quick to write and lets me add in features that I want, most of which have to do with writing small snippets of JavaScript to manipulate data and see how it works.
+
+## Setting Up and Running
+
+Right now getting Hexed up and running should be as simple as installing [node](https://nodejs.org/) and then running `npm install` followed by either `npm run win` (if on Windows) or `npm run mac` if on OS X.

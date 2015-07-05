@@ -262,6 +262,14 @@ FileUI.prototype = {
   },
   showJavaScriptPane: function() {
     // does nothing (yet)
+  },
+  /**
+   * Closes this UI (removes the HTML from the DOM and closes the underlying
+   * file object).
+   */
+  close: function() {
+    this._container.parentNode.removeChild(this._container);
+    this.file.close();
   }
 };
 
