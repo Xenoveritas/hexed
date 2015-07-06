@@ -9,6 +9,23 @@ var HexedWindow = require('./lib/hex-window');
 // be closed automatically when the javascript object is GCed.
 var hexedWindows = [];
 
+/**
+ * Adds a window to the list of windows being tracked. Also adds a close
+ * listener to remove it when it closes.
+ */
+function addWindow(window) {
+  hexedWindows.push(window);
+  window.on('closed', function() {
+    // Remove this window from the windows array
+    for (var i = 0; i < hexedWindows.length; i++) {
+      if (hexedWindows[i] === window) {
+        hexedWindows.splice(i, 1);
+        window = null;
+      }
+    }
+  });
+}
+
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
   console.log("All windows are closed");
@@ -21,24 +38,18 @@ app.on('window-all-closed', function() {
 function openNewWindow(files) {
   // Create the browser window.
   var newWindow = new HexedWindow();
-  hexedWindows.push(newWindow);
+  addWindow(newWindow);
   newWindow.once('ready', function() {
     // Currently just open "whatever the first one is"
     if (files && files.length > 0)
       newWindow.open(files[0]);
   });
+}
 
-  // Emitted when the window is closed.
-  newWindow.on('closed', function() {
-    // Remove this window from the windows array
-    for (var i = 0; i < hexedWindows.length; i++) {
-      if (hexedWindows[i] === newWindow) {
-        // FIXME: Actually splice the array
-        hexedWindows[i] = null;
-        newWindow = null;
-      }
-    }
-  });
+function showAbout() {
+  var win = new BrowserWindow({width: 512, height: 384});
+  win.loadUrl('file://' + __dirname + '/html/about.html');
+  addWindow(win);
 }
 
 // This method will be called when Electron has done everything
@@ -57,4 +68,5 @@ app.on('ready', function() {
   openNewWindow(files);
 });
 
-module.exports.openNewWindow = openNewWindow;
+exports.openNewWindow = openNewWindow;
+exports.showAbout = showAbout;
