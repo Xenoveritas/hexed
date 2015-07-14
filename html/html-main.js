@@ -1,10 +1,9 @@
 /**
- * This file controls the majority of the HTML side of the application.
- * Conceptually this file should be a single object but since the module is
- * unique per window I'm not sure that matters.
+ * This module is the main "controller" for the HTML side of hexed. It maintains
+ * the window and the various open tabs inside it.
  */
 
-var FileUI = require('./file-pane-ui');
+var FileUI = require('./file-ui');
 var hexfile = require('./hexfile');
 
 var ipc = require('ipc');
@@ -14,6 +13,11 @@ var windowId = null;
 
 var activePane = null;
 
+// Can process.platform ever contain things like spaces? I dunno.
+$('body').addClass('platform-' + process.platform);
+
+// Add drag and drop handlers so you can drop a file on the window and it will
+// open in it
 var contents = document.getElementById('main-tab-contents');
 contents.addEventListener('dragenter', function(event) {
   // Check to see if the event is a file
@@ -46,7 +50,7 @@ ipc.on('set-id', function(id) {
   windowId = id;
 });
 
-ipc.on('pane-open', function(id, filename) {
+ipc.on('open-file', function(id, filename) {
   // Kill the "no open file" bit if present
   document.getElementById('main-tab-no-contents').style.display = 'none';
   // Currently we don't support tabs so opening a new pane really means "replace
@@ -68,11 +72,16 @@ ipc.on('pane-open', function(id, filename) {
 ipc.on('menu', function(menu) {
   if (activePane == null)
     return;
-  if (menu == 'jump') {
-    // Ask for an address
-    activePane.showJumpDialog();
-  }
-  if (menu == 'run-javascript') {
-    activePane.showJavaScriptPane();
+  switch (menu) {
+    case 'jump-to':
+      // Ask for an address
+      activePane.showJumpTo();
+      break;
+    case 'run-javascript':
+      activePane.showJavaScriptPane();
+      break;
+    case 'find':
+      activePane.showFind();
+      break;
   }
 });

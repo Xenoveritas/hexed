@@ -14,6 +14,15 @@ body {
   flex-direction: column;
 }
 
+#main-tab-no-contents {
+  font-size: 200%;
+  text-align: center;
+  vertical-align: middle;
+  margin: auto;
+  color: #808080;
+  padding: 1em;
+}
+
 .tabs {
   display: block;
   background-color: #C0C0C0;

@@ -248,7 +248,7 @@ FileUI.prototype = {
     }
     // TODO (maybe): remove no longer needed lines?
   },
-  showJumpDialog: function() {
+  showJumpTo: function() {
     var me = this;
     bootbox.prompt("Jump to address", function(result) {
       // Convert the string to a number using parseInt so that stuff like
@@ -259,6 +259,9 @@ FileUI.prototype = {
         me._moveTo(Math.floor(addr/16));
       }
     });
+  },
+  showFind: function() {
+    // does nothing (yet)
   },
   showJavaScriptPane: function() {
     // does nothing (yet)
