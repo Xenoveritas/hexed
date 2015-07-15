@@ -7,12 +7,13 @@
 var bootbox = require('bootbox');
 var Scrollbar = require('./scrollbar');
 
-function FileUI(id, file) {
-  var container = document.createElement('div');
-  this._container = container;
+function FileUI(id, file, workspace, container) {
+  this.workspace = workspace;
+  // Generate our UI.
+  this._container = document.createElement('div');
   this._container.className = 'hex-file';
   this._container.setAttribute('id', id);
-  document.getElementById('main-tab-contents').appendChild(container);
+  container.appendChild(this._container);
   this._contents = document.createElement('div');
   this._contents.className = 'contents';
   this._gutter = document.createElement('div');
@@ -27,12 +28,6 @@ function FileUI(id, file) {
   this._scrollBar = new Scrollbar(this._contents);
   this._scrollBar.setTotal(Math.ceil(file.size / 16));
   this._container.appendChild(this._contents);
-  this._container.appendChild(this._statusBar = document.createElement('div'))
-  this._statusBar.className = 'status-bar';
-  this._loadingIndicator = document.createElement('div');
-  this._loadingIndicator.className = 'loading';
-  this._loadingIndicator.innerText = file.path + ' (' + file.size + ' bytes)';
-  this._statusBar.appendChild(this._loadingIndicator);
   this._lines = [];
   // We need a dummy line to measure line metrics. This line must always be
   // "visible" so we can measure it and needs the same "size" as real lines so
@@ -40,11 +35,9 @@ function FileUI(id, file) {
   // actually visible.
   this._dummyLine = this._createLine();
   this._dummyLine.setToDummy(Math.floor(file.size / 16));
-  this._hex.setAttribute("tabindex", "0");
-  this._decoded.setAttribute("tabindex", "0");
+  this._container.setAttribute("tabindex", "0");
   var keydown = (function(me) { return function(event) { me._onKeyDown(event); }; })(this);
-  this._hex.addEventListener('keydown', keydown, false);
-  this._decoded.addEventListener('keydown', keydown, false);
+  this._container.addEventListener('keydown', keydown, false);
   var me = this;
   window.addEventListener('resize', function() {
     me.resized();
@@ -225,10 +218,10 @@ FileUI.prototype = {
     this._scrollBar.setPosition(offset);
   },
   hideLoadingStatus: function() {
-    this._loadingIndicator.style.display = 'none';
+    //this._loadingIndicator.style.display = 'none';
   },
   setLoadingStatus: function(filename, percent) {
-    this._loadingIndicator.innerText = 'Loading ' + filename + '... (' + percent + '%)';
+    //this._loadingIndicator.innerText = 'Loading ' + filename + '... (' + percent + '%)';
   },
   resized: function() {
     // Check to see what our visible area is

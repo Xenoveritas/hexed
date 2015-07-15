@@ -2,6 +2,8 @@
  * This module defines a basic "scrollbar" type thing. It's not a "real"
  * scrollbar: it does no scrolling. It simply provides a UI element that looks
  * like a scrollbar.
+ *
+ * It is up to the container to properly style the scrollbar.
  */
 
 function Scrollbar(container) {

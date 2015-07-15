@@ -3,22 +3,18 @@
  * the window and the various open tabs inside it.
  */
 
-var FileUI = require('./file-ui');
-var hexfile = require('./hexfile');
-
 var ipc = require('ipc');
 var path = require('path');
 
 var windowId = null;
 
-var activePane = null;
-
 // Can process.platform ever contain things like spaces? I dunno.
+// TODO (maybe): remove jQuery dependency?
 $('body').addClass('platform-' + process.platform);
 
 // Add drag and drop handlers so you can drop a file on the window and it will
 // open in it
-var contents = document.getElementById('main-tab-contents');
+var contents = document.body;
 contents.addEventListener('dragenter', function(event) {
   // Check to see if the event is a file
   if (event.dataTransfer.files.length == 1) {
@@ -45,28 +41,20 @@ contents.addEventListener('drop', function(event) {
   }
 }, false);
 
+// Build our core UI.
+
+var Workspace = require('./workspace').Workspace;
+
+var workspace = new Workspace();
+
+// Set up IPC.
 ipc.on('set-id', function(id) {
   console.log("Got id: " + id);
   windowId = id;
 });
 
 ipc.on('open-file', function(id, filename) {
-  // Kill the "no open file" bit if present
-  document.getElementById('main-tab-no-contents').style.display = 'none';
-  // Currently we don't support tabs so opening a new pane really means "replace
-  // the existing one"
-  if (activePane) {
-    activePane.close();
-  }
-  hexfile.open(filename, function(err, file) {
-    if (err) {
-      // TODO: Show error
-      console.log(err);
-    } else {
-      activePane = new FileUI(id, file);
-      document.title = path.basename(filename) + ' - Hexed';
-    }
-  });
+  workspace.openFile(filename);
 });
 
 ipc.on('menu', function(menu) {
@@ -85,3 +73,5 @@ ipc.on('menu', function(menu) {
       break;
   }
 });
+
+exports.workspace = workspace;

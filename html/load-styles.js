@@ -2,7 +2,9 @@ var less = require('less'),
   fs = require('fs'),
   path = require('path');
 
-// TODO:
+// TODO: At some point, the generated files should probably be cached and we
+// should load them that way. Actually I guess ultimately all that stuff should
+// happen during startup, maybe.
 
 function loadSheet(filename, callback) {
   if (arguments.length < 2 || callback == null) {
@@ -28,4 +30,4 @@ function loadSheet(filename, callback) {
   });
 }
 
-loadSheet(path.join(path.dirname(module.filename), 'hexed.less'));
+loadSheet(path.join(path.dirname(module.filename), 'less', 'hexed.less'));
