@@ -1,6 +1,11 @@
+* {
+  // Size things sanely, please.
+  box-sizing: border-box;
+}
+
 html, body {
-  /* Default font */
-  font-family: "Segoe UI", "Lucidia Grande", sans-serif;
+  // Default font
+  font-family: sans-serif;
   margin: 0;
   padding: 0;
   background-color: #FFF;
@@ -9,9 +14,39 @@ html, body {
   height: 100%;
 }
 
-body {
-  display: flex;
-  flex-direction: column;
+// Windows styles
+@import url(hexed.win32.less);
+
+// OS X styles
+@import url(hexed.osx.less);
+
+// Custom tags used to lay stuff out
+hexed-workspace {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  .horizontal, .vertical {
+    position: relative;
+  }
+}
+
+hexed-workspace-axis.horizontal {
+  display: -webkit-flex;
+  height: 100%;
+}
+
+hexed-workspace-axis.vertical {
+  display: -webkit-flex;
+  -webkit-flex: 1;
+  -webkit-flex-flow: column;
+}
+
+hexed-panel-container.left, hexed-panel-container.right {
+  display: -webkit-flex;
+  -webkit-flex-direction: row;
+  -webkit-align-items: stretch;
+  height: 100%;
 }
 
 #main-tab-no-contents {
@@ -69,7 +104,7 @@ body {
 }
 
 .hex-file .contents {
-  font-family: Consolas, Courier, monospace;
+  font-family: monospace;
   flex-grow: 1;
   display: flex;
   flex-direction: row;

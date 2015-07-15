@@ -2,11 +2,16 @@
 
 <html>
 <head>
-    <title>Hexed</title>
-    <link type="text/css" rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
-    <link type="text/css" rel="stylesheet" href="hexed.css">
+  <title>Hexed</title>
+  <link type="text/css" rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
+  <script type="application/javascript">
+    // Load our LESS stylesheets.
+    // Eventually these will be pre-generated as part of the build process. But
+    // as there is no build process yet...
+    require('./load-styles');
+  </script>
 </head>
-<body>
+<body tabindex="-1">
   <div id="main-tab-contents" class="tab-contents">
     <div id="main-tab-no-contents">
       Open a file from the File menu or drag and drop a file onto the window.
