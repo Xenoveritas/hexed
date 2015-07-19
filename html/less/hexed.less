@@ -76,12 +76,28 @@ hexed-panel-container {
 
 .hex-file .line {
   font-family: monospace;
+  font-size: 10pt;
+  line-height: 14pt;
+  white-space: nowrap;
   &.loading {
     color: mix(@hexedBackground, @hexedColor);
+  }
+  .gutter {
+    display: inline-block;
+    padding: 0 1em;
+    border-right: solid 1px mix(@hexedBackground, @hexedColor);
+    text-align: right;
+    // The gutter width is set to the text width, so change the box-sizing
+    box-sizing: content-box;
   }
   .data {
     display: inline-block;
     padding: 0 1em;
+  }
+  .decoded {
+    display: inline-block;
+    padding: 0 1em;
+    border-left: solid 1px mix(@hexedBackground, @hexedColor);
   }
 }
 

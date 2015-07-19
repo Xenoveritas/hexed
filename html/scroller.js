@@ -147,7 +147,7 @@ Scroller.prototype = {
     return Math.floor(this._verticalOffset / this.lineHeight);
   },
   getVisibleLines: function() {
-    return Math.ceil(this.container.offsetHeight / this.lineHeight);
+    return Math.ceil(this.container.offsetHeight / this.lineHeight) + 1;
   },
   setTotalLines: function(lines) {
     this.totalLines = lines;
@@ -281,7 +281,7 @@ Scroller.prototype = {
       this.documentHeight = this.lineHeight * this.totalLines;
     }
     // See if we need to generate lines.
-    var neededLines = Math.ceil(h / this.lineHeight);
+    var neededLines = this.getVisibleLines();
     if (this._lines.length < neededLines) {
       console.log("Require " + neededLines + ", have " + this._lines.length);
       // Create the missing lines
@@ -297,8 +297,8 @@ Scroller.prototype = {
    * signature function(line, lineNumber).
    */
   forEachLine: function(f) {
-    var firstLine = Math.floor(this._verticalOffset / this.lineHeight),
-      visibleLines = Math.ceil(h / this.lineHeight);
+    var firstLine = this.getFirstLine(),
+      visibleLines = this.getVisibleLines();
     for (var i = 0; i < visibleLines; i++) {
       f(this._lines[i], i + firstLine);
     }
