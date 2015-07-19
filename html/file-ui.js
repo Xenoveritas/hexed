@@ -83,7 +83,7 @@ HexedScroller.prototype.setLineContent = function(line, lineNumber) {
 HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
   console.log("Load " + visibleLines + " lines starting at " + firstLine);
   // Trigger a load
-  this.file.read(firstLine * 16, visibleLines * 16, (function(me) {
+  this.file.ensureCached(firstLine * 16, visibleLines * 16, (function(me) {
     return function(err, buffer) {
       if (err) {
         // TODO: Display something.

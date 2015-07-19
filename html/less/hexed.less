@@ -76,44 +76,15 @@ hexed-panel-container {
 
 .hex-file .line {
   font-family: monospace;
-}
-/*
-Junk
-.tab-contents {
-  display: flex;
-  flex-grow: 1;
-}
-
-.hex-file .contents {
-  font-family: monospace;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: row;
-  padding: 5pt;
-  overflow-y: hidden;
+  &.loading {
+    color: mix(@hexedBackground, @hexedColor);
+  }
+  .data {
+    display: inline-block;
+    padding: 0 1em;
+  }
 }
 
-.gutter {
-  padding-right: 0.5em;
-  margin-right: 0.5em;
-  border-right: solid 1px #808080;
-}
-
-.hex {
-  margin: 0 0.5em;
-  white-space: pre;
-}
-
-.decode {
-  padding-left: 0.5em;
-  margin-left: 0.5em;
-  border-left: solid 1px #808080;
-}
-
-.gutter .dummy, .hex .dummy, .decode .dummy {
-  transform: translateX(-1000px) translateY(-1000px);
-}
-*/
 .offset-number {
   text-align: right;
 }

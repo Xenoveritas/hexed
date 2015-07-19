@@ -32,18 +32,37 @@ function Block(index, buffer) {
    */
   this.pending = true;
   this.index = index;
+  this._callback = null;
 }
 
 Block.prototype = {
   _load: function(index, hf, callback) {
+    // If we're already loading, just add the callback to the list.
+    if (this._callback !== null) {
+      if (typeof this._callback == 'function') {
+        var cb = this._callback;
+        this._callback = [ cb, callback ];
+      } else {
+        this._callback.push(callback);
+      }
+      return;
+    }
+    this._callback = callback;
     this.pending = true;
     this.index = index;
     // Figure out the offset and length
     var offset = index * BLOCK_SIZE, length = Math.min(BLOCK_SIZE, hf.size - offset);
     fs.read(hf.fd, this.buffer, 0, length, offset, (function(me) {
       return function(err, bytesRead, buffer) {
+        var callbacks = me._callback;
+        me._callback = null;
         if (err) {
-          return callback(err);
+          if (typeof callbacks == 'function') {
+            callbacks(err);
+          } else {
+            callbacks.forEach(function(cb) { cb(err); });
+          }
+          return;
         }
         if (bytesRead < length) {
           // It looks like the only way this will happen is if we go off the end
@@ -51,7 +70,12 @@ Block.prototype = {
         }
         console.log("Block " + me.index + " loaded.");
         me.pending = false;
-        return callback(null, me);
+        if (typeof callbacks == 'function') {
+          callbacks(null, me);
+        } else {
+          callbacks.forEach(function(cb) { cb(null, me); });
+        }
+        return;
       };
     })(this));
   }
@@ -77,6 +101,7 @@ function HexFile(path, fd, callback) {
   this._blocks = new LRU({max: 128, dispose: function(key, block) {
     // At some point it may make sense to try and reuse buffers. Meh.
   } });
+  this._maxReadLength = 128 * BLOCK_SIZE;
   this._blockCount = 0;
   // We maintain a linked list of blocks in most recent to least recent order.
   // This list is used to reclaim blocks if we go over the maximum number of
@@ -111,23 +136,6 @@ HexFile.prototype._getBlock = function(index) {
 };
 
 /**
- * Gets the cached block if it exists, or triggers a load if it doesn't.
- */
-HexFile.prototype._loadBlock = function(index, callback) {
-  var block = this._blocks.get(index);
-  if (block) {
-    callback(null, block);
-    return block;
-  }
-  // Otherwise we need to generate a new block.
-  block = new Block(index);
-  this._blocks.set(index, block);
-  // And trigger a load for this block
-  block._load(index, this, callback);
-  return block;
-}
-
-/**
  * Asynchronously reads a part of the file. The part requested will be cached
  * for fast access through {@link #readCached}.
  * <p>
@@ -137,6 +145,10 @@ HexFile.prototype._loadBlock = function(index, callback) {
  * it. (Buffer.copy makes that easy.)
  */
 HexFile.prototype.read = function(offset, length, callback) {
+  if (length > this._maxReadLength) {
+    // TODO: Allow this?
+    throw Error("Request to read more than the cache is willing to store (" + length + " requested, max allowed is " + this._maxReadLength + ")");
+  }
   // First, the easy version.
   var res = this.readCached(offset, length);
   if (res) {
@@ -144,25 +156,53 @@ HexFile.prototype.read = function(offset, length, callback) {
     callback(null, res);
     return this;
   } else {
-    // Otherwise we need to plan for the reads.
-    var index = Math.floor(offset / BLOCK_SIZE);
-    debuglog("Need to read block %d", index);
-    // FIXME: Need to deal with reads that span blocks. Thankfully this.readCached
-    // has already rejected such reads at this point in time.
-    // FIXME: Also need to deal with "ludicrous" reads - reads that attempt to
-    // read more than our cache will willingly hold. (In these cases, we should
-    // just do the read directly and not bother caching any of it.)
-    this._loadBlock(index, (function(me, offset, length) {
-      return function(err, block) {
-        if (err) {
-          callback(err);
-          return;
-        }
-        var blockOffset = offset % BLOCK_SIZE;
-        callback(null, block.buffer.slice(blockOffset, blockOffset + length));
+    // Otherwise just use ensureCached to load the missing data.
+    var me = this;
+    this.ensureCached(offset, length, function(err) {
+      if (err) {
+        callback(err);
+      } else {
+        // Now that the blocks are loaded, redo the read so we use the cached
+        // data.
+        me.read(offset, length, callback);
       }
-    })(this, offset, length));
+    });
     return this;
+  }
+};
+
+/**
+ * Ensure that a given section of the file is cached. The callback will be
+ * invoked when the blocks are loaded, but it will not be given any data. If all
+ * the blocks covered are loaded, the callback will simply be called
+ * immediately.
+ */
+HexFile.prototype.ensureCached = function(offset, length, callback) {
+  var firstIndex = Math.floor(offset / BLOCK_SIZE),
+    lastIndex = Math.floor((offset + length) / BLOCK_SIZE),
+    needed = 0, handler = function(err) {
+      needed--;
+      if (err != null || needed == 0) {
+        callback(err);
+      }
+    };
+  debuglog('Ensure cached [%s:%d] => [%d,%d]', offset.toString(16), length, firstIndex, lastIndex);
+  for (var i = firstIndex; i <= lastIndex; i++) {
+    var block = this._getBlock(i);
+    if (!block) {
+      // If no block, create it.
+      block = new Block(i);
+      this._blocks.set(i, block);
+    }
+    if (block.pending) {
+      // If the block is pending, tell the block to load.
+      needed++;
+      block._load(i, this, handler);
+    }
+  }
+  if (needed == 0) {
+    // Immediately invoke the callback.
+    callback(null);
   }
 };
 
@@ -175,27 +215,55 @@ HexFile.prototype.read = function(offset, length, callback) {
  * data can only be assumed valid until another method is invoked on this hex
  * file. If you need to persist the data for a long period of time, you'll need
  * to copy it. (Buffer.copy makes that easy.)
+ * <p>
+ * If you request a set of the file past the end (or beginning)
  */
 HexFile.prototype.readCached = function(offset, length) {
-  if (offset >= this.size)
-    throw Error("Attempt to read past end of file (file is " + this.size + "bytes, offset was " + offset + ")");
   if (offset + length > this.size) {
     length = this.size - offset;
   }
-  var index = Math.floor(offset / BLOCK_SIZE);
-  var blockOffset = offset % BLOCK_SIZE;
-  if (blockOffset + length > BLOCK_SIZE)
-    throw Error("Oops: can't read " + length + " bytes at " + offset + " - this spans blocks (FIXME)");
-  // TODO: Allow reads that span multiple blocks. (The present design prevents
-  // such a thing from happening - the lines always break at block boundaries.)
-  var block = this._getBlock(index);
-  if (!block || block.pending) {
-    debuglog('Cache miss for [0x%s:%d] => %d', offset.toString(16), length, index);
-    return null;
-  } else {
-    debuglog('Cache hit for [0x%s:%d] => %d', offset.toString(16), length, index);
+  if (!(length > 0) || !(offset >= 0)) {
+    // No data to read, so just return an empty buffer.
+    return new Buffer(0);
+  }
+  var firstIndex = Math.floor(offset / BLOCK_SIZE),
+    lastIndex = Math.floor((offset + length) / BLOCK_SIZE);
+  if (firstIndex === lastIndex) {
+    // This is the easiest case.
+    var block = this._getBlock(firstIndex);
+    if (!block || block.pending) {
+      return null;
+    }
+    var blockOffset = offset % BLOCK_SIZE;
     return block.buffer.slice(blockOffset, blockOffset + length);
   }
+  // Grab all the blocks we need.
+  var blocks = [];
+  // Check to see if all these blocks are loaded.
+  for (var i = firstIndex; i <= lastIndex; i++) {
+    var block = this._getBlock(i);
+    if (!block || block.pending) {
+      debuglog('Cache miss for [0x%s:%d] => %d', offset.toString(16), length, i);
+      return null;
+    }
+    blocks.push(block);
+  }
+  // We have all the blocks we need. Create a buffer and copy the data into
+  // it.
+  var buffer = new Buffer(length), bufOffset = 0,
+    blockOffset = offset % BLOCK_SIZE, last = blocks.length - 1;
+  // First copy the data from the first block
+  blocks[0].buffer.copy(buffer, 0, blockOffset);
+  bufOffset = BLOCK_SIZE - blockOffset;
+  // Copy the middle blocks if there are any
+  for (var i = 1; i < last; i++) {
+    blocks[i].buffer.copy(buffer, bufOffset);
+    bufOffset += BLOCK_SIZE;
+  }
+  // Copy whatever is left out of the last block.
+  blocks[last].buffer.copy(buffer, bufOffset, 0, length - bufOffset);
+  // And return.
+  return buffer;
 };
 
 exports.open = function(path, callback) {
