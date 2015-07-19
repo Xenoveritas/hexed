@@ -1,3 +1,11 @@
+/**
+ * @module
+ * This is the master startup module for hexed. It controls the core app and
+ * looks after the various windows. Right now it doesn't do all that much, but
+ * in the future it will deal with loading plugins and any initial start-up
+ * stuff that needs to be done.
+ */
+
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');
 var HexedWindow = require('./lib/hex-window');
@@ -8,6 +16,12 @@ var HexedWindow = require('./lib/hex-window');
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the javascript object is GCed.
 var hexedWindows = [];
+
+// TODO: Register a new "hexed" protocol for loading our resources.
+
+// TODO: Look for plugins.
+
+// TODO: Restore previous session (if any)
 
 /**
  * Adds a window to the list of windows being tracked. Also adds a close

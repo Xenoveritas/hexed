@@ -7,6 +7,97 @@
 var bootbox = require('bootbox');
 var Scrollbar = require('./scrollbar');
 
+var Scroller = require('./scroller');
+
+function HexedScroller(container, file) {
+  Scroller.call(this, container);
+  container.style.position = 'absolute';
+  this.file = file;
+  // Figure out how many lines there are at 16 bytes per line
+  this.setTotalLines(Math.ceil(file.size / 16));
+}
+
+HexedScroller.prototype = Object.create(Scroller.prototype);
+
+// We need to override a few specific items.
+
+HexedScroller.prototype.createLineContent = function(line) {
+  // Each line has three parts - the gutter, the hex data about the line, and
+  // finally the decoded text about the line.
+  var gutter = document.createElement('span');
+  var data = document.createElement('span');
+  var decoded = document.createElement('span');
+  gutter.className = 'gutter';
+  gutter.innerHTML = '\u00A0';
+  data.className = 'data';
+  data.innerHTML = '\u00A0';
+  decoded.className = 'decoded';
+  decoded.innerHTML = '\u00A0';
+  line.appendChild(gutter);
+  line.appendChild(data);
+  line.appendChild(decoded);
+  line._gutter = gutter;
+  line._data = data;
+  line._decoded = decoded;
+};
+
+HexedScroller.prototype.setLineContent = function(line, lineNumber) {
+  var offset = lineNumber * 16;
+  if (offset > this.file.size) {
+    // Nothing here.
+    line.className = 'line empty';
+    line._gutter.innerHTML = '\u00A0';
+    line._data.innerHTML = '\u00A0';
+    line._decoded.innerHTML = '\u00A0';
+    return true;
+  } else {
+    line._gutter.innerHTML = offset.toString(16).toUpperCase();
+    // See if we can grab the line right now.
+    var data = this.file.readCached(offset, 16);
+    if (data == null) {
+      // We have no data, so just show that.
+      line.className = 'line loading';
+      line._data.innerHTML = '?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??';
+      line._decoded.innerHTML = '????????????????';
+      return false;
+    } else {
+      line.className = 'line';
+      // bytes should be a slice of a buffer
+      var hex = new Array(data.length), decoded = new Array(data.length);
+      for (var i = 0; i < data.length; i++) {
+        // Not clear if byte is signed or not, so make it unsigned
+        var byte = data[i] & 0xFF,
+          h = byte.toString(16).toUpperCase();
+        if (h.length < 2)
+          h = "0" + h;
+        hex[i] = h;
+        decoded[i] = byte < 32 || byte >= 127 ? '.' : String.fromCharCode(byte);
+      }
+      line._data.innerText = hex.join(' ');
+      line._decoded.innerText = decoded.join('');
+      return true;
+    }
+  }
+};
+
+HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
+  console.log("Load " + visibleLines + " lines starting at " + firstLine);
+  // Trigger a load
+  this.file.read(firstLine * 16, visibleLines * 16, (function(me) {
+    return function(err, buffer) {
+      if (err) {
+        // TODO: Display something.
+        console.log(err);
+      } else {
+        console.log("Line loaded, triggering content reset");
+        // Don't care about the actual data, we just want to display our
+        // currently visible lines.
+        me.resetLineContents();
+      }
+    }
+  })(this));
+}
+
 function FileUI(id, file, workspace, container) {
   this.workspace = workspace;
   // Generate our UI.
@@ -14,38 +105,8 @@ function FileUI(id, file, workspace, container) {
   this._container.className = 'hex-file';
   this._container.setAttribute('id', id);
   container.appendChild(this._container);
-  this._contents = document.createElement('div');
-  this._contents.className = 'contents';
-  this._gutter = document.createElement('div');
-  this._gutter.className = 'gutter';
-  this._hex = document.createElement('div');
-  this._hex.className = 'hex';
-  this._decoded = document.createElement('div');
-  this._decoded.className = 'decode';
-  this._contents.appendChild(this._gutter);
-  this._contents.appendChild(this._hex);
-  this._contents.appendChild(this._decoded);
-  this._scrollBar = new Scrollbar(this._contents);
-  this._scrollBar.setTotal(Math.ceil(file.size / 16));
-  this._container.appendChild(this._contents);
-  this._lines = [];
-  // We need a dummy line to measure line metrics. This line must always be
-  // "visible" so we can measure it and needs the same "size" as real lines so
-  // we can calculate the number of visible lines but otherwise shouldn't be
-  // actually visible.
-  this._dummyLine = this._createLine();
-  this._dummyLine.setToDummy(Math.floor(file.size / 16));
-  this._container.setAttribute("tabindex", "0");
-  var keydown = (function(me) { return function(event) { me._onKeyDown(event); }; })(this);
-  this._container.addEventListener('keydown', keydown, false);
-  var me = this;
-  window.addEventListener('resize', function() {
-    me.resized();
-  }, false);
+  this._scroller = new HexedScroller(this._container, file);
   this.file = file;
-  this._lastLine = Math.ceil(file.size / 16);
-  // And now fire a resized that will create all visible lines and load them
-  this.resized();
 }
 
 /**
@@ -117,9 +178,6 @@ FileUI.prototype = {
    */
   _slowLoadWait: 100,
   _slowLoadTimeout: null,
-  _createLine: function(line) {
-    return new FileUI.Line(this);
-  },
   /**
    * Move the start of the displayed information to the given offset.
    */

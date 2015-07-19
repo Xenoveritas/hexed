@@ -60,6 +60,7 @@ function WorkspaceContents(workspace, container) {
   this.placeholder.className = 'placeholder';
   this.placeholder.innerHTML = 'Use File, Open... to open a file or drag and drop a file onto this window.';
   this.panesContainer.appendChild(this.placeholder);
+  this._currentFile = null;
 }
 
 WorkspaceContents.prototype = {
@@ -69,8 +70,13 @@ WorkspaceContents.prototype = {
   _createTab: function(file, id) {
     // Hide the placeholder.
     this.placeholder.style.display = 'none';
+    // At present we don't really do tabs, so destroy the current one.
+    if (this._currentFile) {
+      this._currentFile.close();
+    }
     // Create the UI.
     var tab = new FileUI(id, file, this, this.panesContainer);
+    this._currentFile = tab;
   }
 }
 
