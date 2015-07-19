@@ -7,9 +7,16 @@
 var bootbox = require('bootbox'),
   Scroller = require('./scroller');
 
+/**
+ * Internal function for converting a byte to a human-readable character for
+ * display.
+ */
 function convertByte(byte) {
   if (byte < 32) {
-    return String.fromCharCode(0x2400 + byte);
+    // TODO: Optionally display the UNICODE display codes for these control
+    // codes. Overall this looks terrible in most fonts, so instead:
+    return '.';
+    //return String.fromCharCode(0x2400 + byte);
   } else if (byte < 128) {
     return String.fromCharCode(byte);
   } else {
@@ -120,7 +127,6 @@ HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
         // TODO: Display something.
         console.log(err);
       } else {
-        console.log("Line loaded, triggering content reset");
         // Don't care about the actual data, we just want to display our
         // currently visible lines.
         me.resetLineContents();

@@ -186,6 +186,10 @@ HexFile.prototype.ensureCached = function(offset, length, callback) {
         callback(err);
       }
     };
+  // TODO: Increase cache size in this case? I'm not sure what the "correct"
+  // behavior is.
+  if (lastIndex - firstIndex >= this._blocks.max)
+    throw new Error('Attempting to ensure more cached blocks (' + (lastIndex - firstIndex + 1) + ') than cache size (' + this._blocks.max + ')');
   debuglog('Ensure cached [%s:%d] => [%d,%d]', offset.toString(16), length, firstIndex, lastIndex);
   for (var i = firstIndex; i <= lastIndex; i++) {
     var block = this._getBlock(i);

@@ -60,7 +60,7 @@ function Scroller(container) {
     return function(event) {
       // We want the wheel delta to deal with smooth scrolling. Note that this
       // is probably Chrome-specific. Who cares.
-      me.scrollBy(event.wheelDeltaY);
+      me.scrollBy(-event.wheelDeltaY);
       event.preventDefault();
     }
   })(this);
