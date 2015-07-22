@@ -35,6 +35,19 @@ Workspace.prototype = {
         callback(null, err);
       }
     });
+  },
+  showJumpTo: function() {
+    // Eventually this will be a global pane that is maintained across all panes.
+    var pane = this.contents.activePane;
+    if (pane)
+      pane.showJumpTo();
+  },
+  showJavaScriptPane: function() {
+    // Not implement
+  },
+  showFind: function() {
+    // Eventually this will be a global pane that is maintained across all panes.
+    // Right now it isn't implemented.
   }
 };
 
@@ -64,6 +77,9 @@ function WorkspaceContents(workspace, container) {
 }
 
 WorkspaceContents.prototype = {
+  get activePane() {
+    return this._currentFile;
+  },
   /**
    * Opens a new file tab using the given file object.
    */

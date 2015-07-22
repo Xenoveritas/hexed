@@ -8,9 +8,9 @@ var path = require('path');
 
 var windowId = null;
 
-// Can process.platform ever contain things like spaces? I dunno.
-// TODO (maybe): remove jQuery dependency?
-$('body').addClass('platform-' + process.platform);
+// Can process.platform ever contain things like spaces? I dunno. Just replace
+// any whitespace with - anyway.
+document.body.className = 'platform-' + process.platform.replace(/\s/, '-');
 
 // Add drag and drop handlers so you can drop a file on the window and it will
 // open in it
@@ -58,18 +58,16 @@ ipc.on('open-file', function(id, filename) {
 });
 
 ipc.on('menu', function(menu) {
-  if (activePane == null)
-    return;
   switch (menu) {
     case 'jump-to':
       // Ask for an address
-      activePane.showJumpTo();
+      workspace.showJumpTo();
       break;
     case 'run-javascript':
-      activePane.showJavaScriptPane();
+      workspace.showJavaScriptPane();
       break;
     case 'find':
-      activePane.showFind();
+      workspace.showFind();
       break;
   }
 });

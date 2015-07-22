@@ -161,7 +161,7 @@ FileUI.prototype = {
       var addr = parseInt(result);
       if (addr >= 0 && addr < me.file.size) {
         // More to trap NaN than anything else
-        me._moveTo(Math.floor(addr/16));
+        me._scroller.scrollToLine(Math.floor(addr/16));
       }
     });
   },
