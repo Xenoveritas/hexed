@@ -7,7 +7,7 @@ var app = require('app');
 var BrowserWindow = require('browser-window');
 var Menu = require('menu');
 
-var hexed = require('../hexed');
+var hexed = require('./hexed');
 
 function createTemplate() {
   var command = process.platform == 'darwin' ? 'Command' : 'Ctrl';

@@ -28,7 +28,7 @@ ipc.on('file-dropped', function(event, winId, files) {
 
 function HexedWindow() {
   this.window = new BrowserWindow({width: 800, height: 600});
-  this.window.loadUrl('file://' + __dirname + '/../html/hex-window.html');
+  this.window.loadUrl('file://' + __dirname + '/../hex-window.html');
   this.window.hexed = this;
   this.id = id++;
   this._tabId = 0;

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "A hex file viewer",
   "repository": "https://github.com/Xenoveritas/hexed",
-  "main": "hexed.js",
+  "main": "src/browser/hexed.js",
   "scripts": {
     "win": "node_modules\\electron-prebuilt\\dist\\electron .",
     "osx": "node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron ."

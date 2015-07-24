@@ -8,7 +8,7 @@
 
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');
-var HexedWindow = require('./lib/hex-window');
+var HexedWindow = require('./hex-window');
 
 // Report crashes to our server.
 //require('crash-reporter').start();
@@ -60,18 +60,12 @@ function openNewWindow(files) {
   });
 }
 
-function showAbout() {
-  var win = new BrowserWindow({width: 512, height: 384});
-  win.loadUrl('file://' + __dirname + '/html/about.html');
-  addWindow(win);
-}
-
 // This method will be called when Electron has done everything
 // initialization and ready for creating browser windows.
 app.on('ready', function() {
   var Menu = require('menu');
   // Build our menu
-  var menu = require('./lib/hex-menu').createMenu();
+  var menu = require('./hex-menu').createMenu();
   Menu.setApplicationMenu(menu);
 
   var files = [];
@@ -83,4 +77,3 @@ app.on('ready', function() {
 });
 
 exports.openNewWindow = openNewWindow;
-exports.showAbout = showAbout;
