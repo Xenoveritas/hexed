@@ -267,7 +267,7 @@ WorkspaceContents.prototype = {
       this.placeholder.style.display = 'block';
     } else {
       if (i >= this._panes.length)
-        i = this._panes.length--;
+        i = this._panes.length - 1;
       // Activate the new tab
       this.activePane = this._panes[i];
     }
