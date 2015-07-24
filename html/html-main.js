@@ -57,19 +57,10 @@ ipc.on('open-file', function(id, filename) {
   workspace.openFile(filename);
 });
 
-ipc.on('menu', function(menu) {
-  switch (menu) {
-    case 'jump-to':
-      // Ask for an address
-      workspace.showJumpTo();
-      break;
-    case 'run-javascript':
-      workspace.showJavaScriptPane();
-      break;
-    case 'find':
-      workspace.showFind();
-      break;
-  }
+ipc.on('menu', function(command) {
+  // For the most part menu things should be passed straight through to the
+  // workspace to decide how it wants to deal with them.
+  workspace.doMenuCommand(command);
 });
 
 exports.workspace = workspace;

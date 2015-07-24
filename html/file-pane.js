@@ -135,23 +135,41 @@ HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
   })(this));
 }
 
-function FileUI(id, file, workspace, container) {
+function FilePane(pane, file, workspace) {
+  pane.title = file.filename;
   this.workspace = workspace;
   // Generate our UI.
   this._container = document.createElement('div');
   this._container.className = 'hex-file';
-  this._container.setAttribute('id', id);
-  container.appendChild(this._container);
+  pane.contents.appendChild(this._container);
+  pane.on('menu', (function(me) { return function(command) {
+    me.doMenuCommand(command);
+  }; })(this));
   this._scroller = new HexedScroller(this._container, file);
   this.file = file;
 }
 
-FileUI.prototype = {
+FilePane.prototype = {
   hideLoadingStatus: function() {
     //this._loadingIndicator.style.display = 'none';
   },
   setLoadingStatus: function(filename, percent) {
     //this._loadingIndicator.innerText = 'Loading ' + filename + '... (' + percent + '%)';
+  },
+  doMenuCommand: function(command) {
+    switch (command) {
+    case 'jump-to':
+      // Ask for an address
+      this.showJumpTo();
+      break;
+    // None of the following are implemented yet:
+    case 'run-javascript':
+      break;
+    case 'find':
+      break;
+    case 'strings':
+      break;
+    }
   },
   showJumpTo: function() {
     var me = this;
@@ -181,4 +199,4 @@ FileUI.prototype = {
   }
 };
 
-module.exports = FileUI;
+module.exports = FilePane;

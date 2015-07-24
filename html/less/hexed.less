@@ -63,14 +63,50 @@ hexed-panel-container {
 }
 
 .panes {
+  flex-direction: column;
   .placeholder {
+    display: flex;
     font-size: 200%;
     color: mix(@hexedBackground, @hexedColor);
     padding: 1em;
   }
+  ul.tabs {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    background-color: @hexedTabBackground;
+    color: @hexedTabColor;
+    li {
+      cursor: default;
+      display: inline-block;
+      padding: 4px 1em;
+      border: solid 1px @hexedTabColor;
+      &.active {
+        background-color: @hexedActiveTabBackground;
+        color: @hexedActiveTabColor;
+        border-bottom: none;
+        padding-bottom: 5px;
+      }
+    }
+    z-index: 100;
+  }
+  .pane-contents {
+    display: flex;
+    flex-grow: 1;
+    position: relative;
+    background-color: @hexedBackground;
+    color: @hexedColor;
+    z-index: 10;
+  }
   .hex-file {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    &:focus {
+      outline: none;
+    }
   }
 }
 

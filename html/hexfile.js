@@ -4,6 +4,7 @@
  */
 
 var fs = require('fs'),
+  path = require('path'),
   util = require('util'),
   events = require('events'),
   LRU = require('lru-cache');
@@ -88,16 +89,26 @@ Block.prototype = {
  * stats are delayed. When the file is completely populated, callback will be
  * invoked.
  */
-function HexFile(path, fd, callback) {
+function HexFile(filename, fd, callback) {
   events.EventEmitter.call(this);
+  // Immutable properties:
   /**
    * The file's path.
    */
-  this.path = path;
+  Object.defineProperty(this, 'path', {
+    value: filename,
+    enumerable: true
+  });
+  Object.defineProperty(this, 'filename', {
+    value: path.basename(filename)
+  })
   /**
    * The file descriptor for the file (used by the fs module).
    */
-  this.fd = fd;
+  Object.defineProperty(this, 'fd', {
+    value: fd,
+    enumerable: true
+  });
   this._blocks = new LRU({max: 128, dispose: function(key, block) {
     // At some point it may make sense to try and reuse buffers. Meh.
   } });
@@ -220,7 +231,8 @@ HexFile.prototype.ensureCached = function(offset, length, callback) {
  * file. If you need to persist the data for a long period of time, you'll need
  * to copy it. (Buffer.copy makes that easy.)
  * <p>
- * If you request a set of the file past the end (or beginning)
+ * If you request a set of the file past the end (or beginning), then this will
+ * return an empty buffer.
  */
 HexFile.prototype.readCached = function(offset, length) {
   if (offset + length > this.size) {
@@ -270,12 +282,63 @@ HexFile.prototype.readCached = function(offset, length) {
   return buffer;
 };
 
-exports.open = function(path, callback) {
-  fs.open(path, 'r', function(err, fd) {
+/**
+ * Scans the entire file, passing blocks to the callback in order as they are
+ * read. The callback has the signature function(err, buffer, offset), where
+ * err is non-null if an error has occurred, buffer is the buffer containing
+ * the data, and offset is the offset in bytes from the start of the file for
+ * that buffer.
+ * <p>
+ * The callback may return false to stop the scan if so desired. Any other
+ * return value will continue the scan. (Raising an error will <em>also</em>
+ * stop the scan.)
+ * <p>
+ * Note that while this will consult the local cache for blocks, it does not
+ * cache content it finds.
+ */
+HexFile.prototype.scan = function(callback) {
+  var index = 0,
+    me = this,
+    buffer = new Buffer(BLOCK_SIZE),
+    readNextBlock = function() {
+      // In order to avoid destroying the stack if we have enough cached blocks
+      // to scan through, do this in a loop. We only break the loop once we have\
+      // no cached data.
+      while (true) {
+        var b = me._blocks.peek(index);
+        if (b && !b.pending) {
+          if (callback(null, b.buffer, index * BLOCK_SIZE) === false) {
+            // Cancel the scan.
+            return;
+          }
+          index++;
+        } else {
+          // Need to read it
+          fs.read(me.fd, buffer, 0, buffer.length, index * BLOCK_SIZE, function(err) {
+            if (err) {
+              callback(err);
+            } else {
+              if (callback(null, buffer, index * BLOCK_SIZE) !== false) {
+                // And read the next block
+                readNextBlock();
+              }
+            }
+          });
+          index++;
+          // And we're done for now
+          return;
+        }
+      }
+    };
+  readNextBlock();
+};
+
+exports.open = function(filename, callback) {
+  fs.open(filename, 'r', function(err, fd) {
     if (err) {
       callback(err);
     } else {
-      new HexFile(path, fd, callback);
+      new HexFile(filename, fd, callback);
     }
   });
 }
