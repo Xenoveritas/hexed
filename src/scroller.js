@@ -150,8 +150,14 @@ Scroller.prototype = {
     return Math.ceil(this.container.offsetHeight / this.lineHeight) + 1;
   },
   setTotalLines: function(lines) {
+    // Changing the total lines might require us to redraw, if the last line is
+    // currently visible.
+    var needsRedraw = this.getVisibleLines() + this.getFirstLine() <= this.totalLines;
     this.totalLines = lines;
     this.documentHeight = this.lineHeight * this.totalLines;
+    if (needsRedraw) {
+      this.resetLineContents();
+    }
   },
   /**
    * Remove all event listeners and destroy all current DOM elements.

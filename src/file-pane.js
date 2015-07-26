@@ -5,7 +5,8 @@
  */
 
 var bootbox = require('bootbox'),
-  Scroller = require('./scroller');
+  Scroller = require('./scroller'),
+  StringsPane = require('./strings-pane');
 
 /**
  * Internal function for converting a byte to a human-readable character for
@@ -168,6 +169,7 @@ FilePane.prototype = {
     case 'find':
       break;
     case 'strings':
+      this.showStrings();
       break;
     }
   },
@@ -188,6 +190,17 @@ FilePane.prototype = {
   },
   showJavaScriptPane: function() {
     // does nothing (yet)
+  },
+  showStrings: function() {
+    if (!this._stringsPane) {
+      // Create the strings pane
+      var pane = this.workspace.createPane();
+      pane.on('closed', (function(me) {
+        return function() { me._stringsPane = null; }
+      })(this));
+      this._stringsPane = new StringsPane(pane, this.file);
+    }
+    this.workspace.activePane = this._stringsPane;
   },
   /**
    * Closes this UI (removes the HTML from the DOM and closes the underlying

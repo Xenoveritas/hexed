@@ -62,21 +62,21 @@ function createTemplate() {
           click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
         },
       ]
-    },/*
+    },
     {
       label: 'Search',
       submenu: [
-        {
+        /*{
           label: 'Find...',
           accelerator: command + '+F',
           click: function() { BrowserWindow.getFocusedWindow().hexed.sendMenu('find'); }
-        },
+        },*/
         {
           label: 'Strings...',
           click: function() { BrowserWindow.getFocusedWindow().hexed.sendMenu('strings'); }
         }
       ]
-    },*/
+    },
     {
       label: 'Help',
       submenu: [

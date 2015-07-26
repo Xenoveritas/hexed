@@ -304,7 +304,7 @@ HexFile.prototype.scan = function(callback) {
       // In order to avoid destroying the stack if we have enough cached blocks
       // to scan through, do this in a loop. We only break the loop once we have\
       // no cached data.
-      while (true) {
+      while (index < me.maxBlock) {
         var b = me._blocks.peek(index);
         if (b && !b.pending) {
           if (callback(null, b.buffer, index * BLOCK_SIZE) === false) {
@@ -314,11 +314,14 @@ HexFile.prototype.scan = function(callback) {
           index++;
         } else {
           // Need to read it
-          fs.read(me.fd, buffer, 0, buffer.length, index * BLOCK_SIZE, function(err) {
+          fs.read(me.fd, buffer, 0, buffer.length, index * BLOCK_SIZE, function(err, bytesRead) {
             if (err) {
               callback(err);
             } else {
-              if (callback(null, buffer, index * BLOCK_SIZE) !== false) {
+              // If we didn't read the full buffer size (which happens on the last block)
+              // return a slice.
+              if (callback(null, bytesRead < buffer.length ?
+                  buffer.slice(0, bytesRead) : buffer, index * BLOCK_SIZE) !== false) {
                 // And read the next block
                 readNextBlock();
               }
