@@ -115,15 +115,25 @@ Workspace.prototype = {
 Workspace.Pane = function(workspace, id) {
   var title = 'New';
   this.contents = document.createElement('div');
-  var tab = this.tab = document.createElement('li');
+  var tab = this.tab = document.createElement('li'), tabTitle, tabButton;
   console.log('adding event listener');
-  this.tab.addEventListener('click', (function(me) {
+  tab.addEventListener('click', (function(me) {
     return function(event) {
       me.workspace.activePane = me;
       event.preventDefault();
     };
   })(this), false);
-  this.tab.innerText = title;
+  tab.appendChild(tabTitle = document.createElement('span'));
+  tabTitle.innerText = title;
+  tab.appendChild(tabButton = document.createElement('a'));
+  tabButton.innerHTML = '\u2573';
+  tabButton.addEventListener('click', (function(me) {
+    return function(event) {
+      event.preventDefault();
+      me.close();
+      return false;
+    }
+  })(this));
   this.contents.className = 'pane-contents';
   this.contents.setAttribute('id', '_pane_' + id);
   this.tab.setAttribute('id', '_tab_' + id);
@@ -142,7 +152,7 @@ Workspace.Pane = function(workspace, id) {
       if (typeof value != 'string')
         value = value.toString();
       title = value;
-      tab.innerText = title;
+      tabTitle.innerText = title;
       if (workspace.activePane === this) {
         workspace._updateTitle();
       }
