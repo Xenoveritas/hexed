@@ -1,8 +1,12 @@
 /**
  * Module for finding strings in a file and showing them in a pane.
+ * <p>
+ * The goal is to eventually move this into a "plugin" that provides the
+ * functionality.
  */
 
-var Scroller = require('./scroller');
+var Scroller = require('./scroller'),
+  strings = require('./strings');
 
 /**
  * Scroller for showing the strings.
@@ -44,25 +48,9 @@ function StringsPane(pane, file) {
   div.className = 'strings';
   this.scroller = new StringsScroller(div);
   pane.contents.appendChild(div);
-  this.file.scan((function(strings) {
-    var previous = null, start = -1;
-    return function(err, buffer, offset) {
-      console.log('Scan: ' + buffer.length + ' bytes @' + offset);
-      // Find strings within the buffer
-      for (var i = 0; i < buffer.length; i++) {
-        if (start < 0) {
-          // See if we're starting a string
-          if (buffer[i] >= 32 && buffer[i] <= 127) {
-            start = i;
-          }
-        } else if (buffer[i] < 32 || buffer[i] > 127) {
-          if (i - start >= 4) {
-            // Long enough, go ahead and add it
-            strings._addString(offset + start, buffer.toString('utf8', start, i));
-          }
-          start = -1;
-        }
-      }
+  strings.scan(file, (function(scroller) {
+    return function(err, str, offset, encoding) {
+      scroller._addString(offset, str);
     };
   })(this.scroller));
 }

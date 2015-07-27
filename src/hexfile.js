@@ -295,16 +295,30 @@ HexFile.prototype.readCached = function(offset, length) {
  * <p>
  * Note that while this will consult the local cache for blocks, it does not
  * cache content it finds.
+ * @param {function(error, buffer, offset)} callback callback that receives block data or
+ * an error if the scan has failed. A scan may return <code>false</code> to
+ * terminate a scan.
+ * @param {number} offset the offset (in bytes) into the file to start at. At
+ * present you will <em>always</em> receive complete blocks, so the first byte
+ * received may not be at the requested offset.
+ * @param {number} lastOffset the last offset (in bytes, exclusive) to receive
+ * data from.
  */
-HexFile.prototype.scan = function(callback) {
-  var index = 0,
+HexFile.prototype.scan = function(callback, offset, lastOffset) {
+  if (arguments.length < 3) {
+    lastOffset = this.size;
+    if (arguments.length < 2)
+      offset = 0;
+  }
+  var index = Math.floor(offset / BLOCK_SIZE),
+    lastIndex = Math.ceil(lastOffset / BLOCK_SIZE),
     me = this,
     buffer = new Buffer(BLOCK_SIZE),
     readNextBlock = function() {
       // In order to avoid destroying the stack if we have enough cached blocks
-      // to scan through, do this in a loop. We only break the loop once we have\
+      // to scan through, do this in a loop. We only break the loop once we have
       // no cached data.
-      while (index < me.maxBlock) {
+      while (index < lastIndex) {
         var b = me._blocks.peek(index);
         if (b && !b.pending) {
           if (callback(null, b.buffer, index * BLOCK_SIZE) === false) {
@@ -323,16 +337,24 @@ HexFile.prototype.scan = function(callback) {
               if (callback(null, bytesRead < buffer.length ?
                   buffer.slice(0, bytesRead) : buffer, index * BLOCK_SIZE) !== false) {
                 // And read the next block
+                index++;
                 readNextBlock();
               }
             }
           });
-          index++;
           // And we're done for now
           return;
         }
       }
     };
+  // Sanity checking on the indices to trap NaN and infinity
+  if (!(index >= 0))
+    index = 0;
+  index = Math.min(index, this.maxBlock);
+  if (!(index < lastIndex)) {
+    lastIndex = index;
+  }
+  console.log('scan: scan from ' + index + ' to ' + lastIndex);
   readNextBlock();
 };
 
