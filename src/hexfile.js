@@ -52,8 +52,9 @@ Block.prototype = {
     this.pending = true;
     this.index = index;
     // Figure out the offset and length
-    var offset = index * BLOCK_SIZE, length = Math.min(BLOCK_SIZE, hf.size - offset);
-    fs.read(hf.fd, this.buffer, 0, length, offset, (function(me) {
+    var offset = index * BLOCK_SIZE;
+    this.length = Math.min(BLOCK_SIZE, hf.size - offset);
+    fs.read(hf.fd, this.buffer, 0, this.length, offset, (function(me) {
       return function(err, bytesRead, buffer) {
         var callbacks = me._callback;
         me._callback = null;
@@ -65,7 +66,7 @@ Block.prototype = {
           }
           return;
         }
-        if (bytesRead < length) {
+        if (bytesRead < me.length) {
           // It looks like the only way this will happen is if we go off the end
           // of the file. TODO: check to make sure that's true.
         }
@@ -111,14 +112,11 @@ function HexFile(filename, fd, callback) {
   });
   this._blocks = new LRU({max: 128, dispose: function(key, block) {
     // At some point it may make sense to try and reuse buffers. Meh.
+    // (What this is probably going to look like is shoving the last disposed
+    // buffer into this and then grabbing it if it exists on building a new
+    // block.)
   } });
   this._maxReadLength = 128 * BLOCK_SIZE;
-  this._blockCount = 0;
-  // We maintain a linked list of blocks in most recent to least recent order.
-  // This list is used to reclaim blocks if we go over the maximum number of
-  // blocks we cache for ready access.
-  this._newestBlock = null;
-  this._oldestBlock = null;
   this.maxBlock = 0;
   var me = this;
   // And now grab the stats (such as file size)
@@ -206,6 +204,7 @@ HexFile.prototype.ensureCached = function(offset, length, callback) {
     var block = this._getBlock(i);
     if (!block) {
       // If no block, create it.
+      // FIXME: This is where we should be reusing buffers.
       block = new Block(i);
       this._blocks.set(i, block);
     }
@@ -297,7 +296,9 @@ HexFile.prototype.readCached = function(offset, length) {
  * cache content it finds.
  * @param {function(error, buffer, offset)} callback callback that receives block data or
  * an error if the scan has failed. A scan may return <code>false</code> to
- * terminate a scan.
+ * terminate a scan. When a scan has completed and no more blocks will be sent,
+ * the callback will be called with both a null error and buffer with offset
+ * set to the offset that the previous callback ended on.
  * @param {number} offset the offset (in bytes) into the file to start at. At
  * present you will <em>always</em> receive complete blocks, so the first byte
  * received may not be at the requested offset.
@@ -321,7 +322,10 @@ HexFile.prototype.scan = function(callback, offset, lastOffset) {
       while (index < lastIndex) {
         var b = me._blocks.peek(index);
         if (b && !b.pending) {
-          if (callback(null, b.buffer, index * BLOCK_SIZE) === false) {
+          var buf = b.buffer;
+          if (buf.length != b.length)
+            buf = buf.slice(0, b.length);
+          if (callback(null, buf, index * BLOCK_SIZE) === false) {
             // Cancel the scan.
             return;
           }
@@ -346,6 +350,8 @@ HexFile.prototype.scan = function(callback, offset, lastOffset) {
           return;
         }
       }
+      // Once we're here, we're done altogether, so signal that.
+      callback(null, null, lastOffset);
     };
   // Sanity checking on the indices to trap NaN and infinity
   if (!(index >= 0))
