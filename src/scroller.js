@@ -67,12 +67,22 @@ function Scroller(container) {
   this.container.addEventListener('mousewheel', this._wheelListener, false);
   // Add key listeners
   this._keyListener = (function(me) { return function(event) {
+    if (me.onkeydown(event) === true)
+      return;
     switch (event.keyIdentifier) {
       case 'Up':
-        me.scrollByLines(-1);
+        if (event.metaKey && process.platform == 'darwin') {
+          me.scrollTo(0);
+        } else {
+          me.scrollByLines(-1);
+        }
         break;
       case 'Down':
-        me.scrollByLines(1);
+        if (event.metaKey && process.platform == 'darwin') {
+          me.scrollTo(me.documentHeight);
+        } else {
+          me.scrollByLines(1);
+        }
         break;
       case 'PageUp':
         me.scrollByPages(-1);
@@ -87,7 +97,6 @@ function Scroller(container) {
         me.scrollTo(me.documentHeight);
         break;
       default:
-        //console.log(event.keyIdentifier);
         // Just return and let the default do whatever
         return;
     }
@@ -143,6 +152,46 @@ Scroller.prototype = {
    * The total height of the document.
    */
   documentHeight: 0,
+  /**
+   * Gets the DOM object for a given line, assuming it's currently visible. If
+   * it isn't, this returns <code>null</code>.
+   */
+  getLine: function(lineNumber) {
+    var firstLine = this.getFirstLine();
+    if (lineNumber < firstLine)
+      return null;
+    var lastLine = firstLine + this.getVisibleLines();
+    if (lineNumber > lastLine)
+      return null;
+    return this._lines[lineNumber - firstLine];
+  },
+  /**
+   * Update a single line. Basically this is just
+   * <code>setLineContent(getLine(lineNumber), lineNumber)</code> with checks to
+   * see if the line is visible.
+   */
+  updateLine: function(lineNumber) {
+    var line = this.getLine(lineNumber);
+    if (line != null)
+      this.setLineContent(line, lineNumber);
+  },
+  /**
+   * Update mutliple lines.
+   */
+  updateLines: function(start, end) {
+    var first = this.getFirstLine(),
+      last = first + this.getVisibleLines();
+    // Only bother if we have lines that are visible.
+    if (end >= first && start <= last) {
+      if (start < first)
+        start = first;
+      if (end > last)
+        end = last;
+      for (var i = start; i < end; i++) {
+        this.setLineContent(this._lines[i - first], i);
+      }
+    }
+  },
   getFirstLine: function() {
     return Math.floor(this._verticalOffset / this.lineHeight);
   },
@@ -201,7 +250,8 @@ Scroller.prototype = {
     }
     // Clamp y. Note that it's possible for our maximum height to be negative if
     // the document doesn't fit, so limit by the height first...
-    var maxHeight = this.documentHeight - this.container.offsetHeight;
+    var height = this.container.offsetHeight,
+      maxHeight = this.documentHeight - height;
     if (y > maxHeight)
       y = maxHeight;
     // And then limit to 0.
@@ -213,15 +263,35 @@ Scroller.prototype = {
     this.container.style.WebkitTransform = 'translateY(' + (-offset) + 'px)';
     // TODO: We may be able to reuse lines more effectively but I'm lazy so just
     // redo all the content.
-    var firstLine = Math.floor(this._verticalOffset / this.lineHeight);
+    var firstLine = this.getFirstLine();
     if (firstLine != this._lastFirstLine) {
       // We've actually moved, so redo the content.
       this._populateLines(firstLine, this.getVisibleLines());
       this._lastFirstLine = firstLine;
     }
+    // And inform
+    this.onscrolled(y, firstLine, height, firstLine + this.getVisibleLines());
   },
+  /**
+   * Scroll so that a given line is visible at the top of the page. If the line
+   * requested is such that there are not enough lines below it to bring the
+   * line to the top of the page, the document will be scrolled such that the
+   * last line is visible.
+   */
   scrollToLine: function(line) {
     this.scrollTo(this.lineHeight * line);
+  },
+  scrollLineIntoView: function(line) {
+    var y = this.lineHeight * line;
+    if (y < this._verticalOffset) {
+      // Simple: scroll to this y
+      this.scrollTo(y);
+    }
+    var height = this.container.offsetHeight;
+    // Otherwise, potentially scroll such that the line is the last line visible.
+    y = y - height + this.lineHeight;
+    if (y > this._verticalOffset)
+      this.scrollTo(y);
   },
   /**
    * Internal method that creates a line and inserts it into the DOM.
@@ -266,6 +336,22 @@ Scroller.prototype = {
     return true;
   },
   /**
+   * Receive notification that the view has been scrolled by some method. This
+   * is invoked internally to let implementations know when the view has
+   * scrolled and by default does nothing. It will be called after any calls to
+   * generate new line content.
+   */
+  onscrolled: function(y, firstLine, height, lastLine) {
+  },
+  /**
+   * Allows an underlying scroller to hook into the default keyboard handling
+   * the scroller provides. This method should return <code>true</code> if it
+   * explicitly handled the event. Otherwise default handling will be provided.
+   */
+  onkeydown: function(event) {
+    return false;
+  },
+  /**
    * Receive notification that the container has resized, which means that some
    * previously visible lines may no longer be visible or that new lines may
    * need to be created.
@@ -289,7 +375,6 @@ Scroller.prototype = {
     // See if we need to generate lines.
     var neededLines = this.getVisibleLines();
     if (this._lines.length < neededLines) {
-      console.log("Require " + neededLines + ", have " + this._lines.length);
       // Create the missing lines
       for (var i = neededLines - this._lines.length; i > 0; i--) {
         this._createLine();

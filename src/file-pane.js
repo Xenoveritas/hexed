@@ -18,7 +18,7 @@ function convertByte(byte) {
     // codes. Overall this looks terrible in most fonts, so instead:
     return '.';
     //return String.fromCharCode(0x2400 + byte);
-  } else if (byte < 128) {
+  } else if (byte < 127) {
     return String.fromCharCode(byte);
   } else {
     return '.';
@@ -29,9 +29,69 @@ function HexedScroller(container, file) {
   Scroller.call(this, container);
   container.style.position = 'absolute';
   this.file = file;
+  // This may eventually become a proper property with write support.
+  this.bytesPerLine = 16;
   // Figure out how many lines there are at 16 bytes per line
-  this.setTotalLines(Math.ceil(file.size / 16));
+  this.setTotalLines(Math.ceil(file.size / this.bytesPerLine));
   this._widthsCalculated = false;
+  // Create the cursor property.
+  (function(me) {
+    // Cursor starts as null so we can do this.cursor = 0 to initialize it
+    var cursor = null;
+    Object.defineProperty(me, 'cursor', {
+      get: function() {
+        return cursor;
+      },
+      set: function(value) {
+        value = me._clampOffset(value);
+        // Note: at present file.size isn't a valid offset since that's one past
+        // the end of the file and we don't do editing. With editing it is
+        // because it means "append."
+        if (value == me.file.size)
+          value--;
+        if (value != null && value !== cursor) {
+          console.log('Moving cursor to ' + value);
+          // At this point we need to update the DOM to mark the new cursor
+          // location.
+          var oldLine = Math.floor(cursor / me.bytesPerLine),
+            newLine = Math.floor(value / me.bytesPerLine);
+          cursor = value;
+          if (oldLine != newLine) {
+            me.updateLine(oldLine);
+          }
+          me.updateLine(newLine);
+        }
+        return cursor;
+      },
+      enumerable: true
+    });
+  })(this);
+  // Define the selection start/end property.
+  (function(me) {
+    var selectionStart = null, selectionEnd = null;
+    Object.defineProperty(me, 'selectionStart', {
+      get: function() {
+        return selectionStart;
+      },
+      set: function(value) {
+        if (value === selectionStart)
+          return;
+        value = me._clampOffset(value);
+        return selectionStart;
+      },
+      enumerable: true
+    });
+    Object.defineProperty(me, 'selectionEnd', {
+      get: function() {
+        return selectionEnd;
+      },
+      set: function(value) {
+        return selectionEnd;
+      },
+      enumerable: true
+    });
+  })(this);
+  this.cursor = 0;
 }
 
 HexedScroller.prototype = Object.create(Scroller.prototype);
@@ -100,6 +160,7 @@ HexedScroller.prototype.setLineContent = function(line, lineNumber) {
       line._decoded.innerHTML = '????????????????';
       return false;
     } else {
+      var cursor = this.cursor;
       line.className = 'line';
       // bytes should be a slice of a buffer
       var hex = new Array(data.length), decoded = new Array(data.length);
@@ -111,9 +172,14 @@ HexedScroller.prototype.setLineContent = function(line, lineNumber) {
           h = "0" + h;
         hex[i] = h;
         decoded[i] = convertByte(byte);
+        // Check to see if the cursor is here
+        if (offset + i == cursor) {
+          hex[i] = '<span class="cursor">' + h + '</span>';
+          decoded[i] = '<span class="cursor">' + decoded[i] + '</span>';
+        }
       }
-      line._data.innerText = hex.join(' ');
-      line._decoded.innerText = decoded.join('');
+      line._data.innerHTML = hex.join(' ');
+      line._decoded.innerHTML = decoded.join('');
       return true;
     }
   }
@@ -136,6 +202,40 @@ HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
   })(this));
 }
 
+HexedScroller.prototype.onkeydown = function(event) {
+  switch (event.keyIdentifier) {
+  case 'Left':
+    this.cursor--;
+    break;
+  case 'Right':
+    this.cursor++;
+    break;
+  case 'Up':
+    this.cursor -= this.bytesPerLine;
+    break;
+  case 'Down':
+    this.cursor += this.bytesPerLine;
+    break;
+  default:
+    return false;
+  }
+  event.preventDefault();
+  return true;
+};
+
+// Helper function
+HexedScroller.prototype._clampOffset = function(offset) {
+  // Ignore NaN or anything that isn't a number.
+  if (typeof offset != 'number' || isNaN(offset))
+    return null;
+  offset = Math.floor(offset);
+  if (offset < 0)
+    return 0;
+  if (offset > this.file.size)
+    return offset.file.size;
+  return offset;
+};
+
 function FilePane(pane, file, workspace) {
   pane.title = file.filename;
   this.workspace = workspace;
@@ -148,15 +248,26 @@ function FilePane(pane, file, workspace) {
   }; })(this));
   this._scroller = new HexedScroller(this._container, file);
   this.file = file;
+  // Various properties that delegate to the scroller
+  (function(me, scroller) {
+    Object.defineProperty(me, 'cursor', {
+      get: function() { return scroller.cursor; },
+      set: function(value) { return scroller.cursor = value; }
+    });
+    Object.defineProperty(me, 'selectionStart', {
+      get: function() { return scroller.selectionStart; },
+      set: function(value) { return scroller.selectionStart = value; }
+    });
+    Object.defineProperty(me, 'selectionEnd', {
+      get: function() { return scroller.selectionEnd; },
+      set: function(value) { return scroller.selectionEnd = value; }
+    });
+  })(this, this._scroller);
+  // Keyboard support
+  this._container.setAttribute('tabindex', '0');
 }
 
 FilePane.prototype = {
-  hideLoadingStatus: function() {
-    //this._loadingIndicator.style.display = 'none';
-  },
-  setLoadingStatus: function(filename, percent) {
-    //this._loadingIndicator.innerText = 'Loading ' + filename + '... (' + percent + '%)';
-  },
   doMenuCommand: function(command) {
     switch (command) {
     case 'jump-to':
@@ -207,7 +318,7 @@ FilePane.prototype = {
    * file object).
    */
   close: function() {
-    this._container.parentNode.removeChild(this._container);
+    this.destroy();
     this.file.close();
   }
 };
