@@ -28,7 +28,8 @@ function createASCIIScanner(callback, minLength, reportErrors) {
     }
     if (buffer == null) {
       // We're at the end of the scan, so any previous should be added directly.
-      callback(null, previous, offset - previous.length, 'ascii');
+      if (previous != null)
+        callback(null, previous, offset - previous.length, 'ascii');
       return;
     }
     var i = 0, start = -1;
