@@ -6,7 +6,9 @@
 
 var bootbox = require('bootbox'),
   Scroller = require('./scroller'),
-  StringsPane = require('./strings-pane');
+  StringsPane = require('./strings-pane'),
+  useOSXShortcuts = process.platform == 'darwin',
+  htmlEscapes = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
 
 /**
  * Internal function for converting a byte to a human-readable character for
@@ -173,6 +175,9 @@ HexedScroller.prototype.setLineContent = function(line, lineNumber) {
           h = "0" + h;
         hex[i] = h;
         decoded[i] = convertByte(byte);
+        if (decoded[i] in htmlEscapes) {
+          decoded[i] = htmlEscapes[decoded[i]];
+        }
         // Check to see if the cursor is here
         if (offset + i == cursor) {
           hex[i] = '<span class="cursor">' + h + '</span>';
@@ -204,6 +209,34 @@ HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
 }
 
 HexedScroller.prototype.onkeydown = function(event) {
+  if (event.altKey || event.ctrlKey) {
+    return;
+  }
+  if (event.metaKey) {
+    if (useOSXShortcuts) {
+      // In this case, the various arrow keys change meaning.
+      switch (event.keyIdentifier) {
+      case 'Left':
+        this.cursor -= this.cursor % this.bytesPerLine;
+        break;
+      case 'Right':
+        this.cursor = this.cursor + (this.bytesPerLine - (this.cursor % this.bytesPerLine) - 1);
+        break;
+      case 'Up':
+        this.cursor = 0;
+        break;
+      case 'Down':
+        // Note: currently this will actually be this.file.size-1, but when
+        // editing is supported, this will move it to a byte past the last one
+        this.cursor = this.file.size;
+        break;
+      default:
+        return false;
+      }
+      event.preventDefault();
+      return true;
+    }
+  }
   switch (event.keyIdentifier) {
   case 'Left':
     this.cursor--;

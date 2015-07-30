@@ -3,6 +3,10 @@
  * System for dealing with a view that reuses DOM elements to scroll content.
  */
 
+// Internal flag indicating if we should use OS X keyboard shortcuts
+// (specifically Command-Up and Command-Down for Home and End).
+var useOSXShortcuts = process.platform == 'darwin'
+
 /**
  * @constructor
  * Create a new Scroller that scrolls contents in the given DOM element. The
@@ -69,16 +73,33 @@ function Scroller(container) {
   this._keyListener = (function(me) { return function(event) {
     if (me.onkeydown(event) === true)
       return;
+    // We only care about keyboard keys when modifier aren't down ... mostly.
+    if (event.altKey || event.ctrlKey || event.shiftKey)
+      return;
+    if (event.metaKey) {
+      if (useOSXShortcuts) {
+        // We have two meta key combinations we allow in this case:
+        if (event.keyIdentifier == 'Up') {
+          me.scrollTo(0);
+          event.preventDefault();
+        } else if (event.keyIdentifier == 'Down') {
+          me.scrollTo(me.documentHeight);
+          event.preventDefault();
+        }
+      }
+      return;
+    }
+    console.log(event);
     switch (event.keyIdentifier) {
       case 'Up':
-        if (event.metaKey && process.platform == 'darwin') {
+        if (event.metaKey && useOSXShortcuts) {
           me.scrollTo(0);
         } else {
           me.scrollByLines(-1);
         }
         break;
       case 'Down':
-        if (event.metaKey && process.platform == 'darwin') {
+        if (event.metaKey && useOSXShortcuts) {
           me.scrollTo(me.documentHeight);
         } else {
           me.scrollByLines(1);
