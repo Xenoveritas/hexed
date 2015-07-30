@@ -50,7 +50,6 @@ function HexedScroller(container, file) {
         if (value == me.file.size)
           value--;
         if (value != null && value !== cursor) {
-          console.log('Moving cursor to ' + value);
           // At this point we need to update the DOM to mark the new cursor
           // location.
           var oldLine = Math.floor(cursor / me.bytesPerLine),
@@ -60,6 +59,8 @@ function HexedScroller(container, file) {
             me.updateLine(oldLine);
           }
           me.updateLine(newLine);
+          // Make sure that line is visible
+          me.scrollLineIntoView(newLine);
         }
         return cursor;
       },
@@ -247,6 +248,13 @@ function FilePane(pane, file, workspace) {
     me.doMenuCommand(command);
   }; })(this));
   this._scroller = new HexedScroller(this._container, file);
+  pane.on('should-focus', (function(element) {
+    return function() { element.focus(); };
+  })(this._container));
+  if (pane.active) {
+    // Focus immediately
+    this._container.focus();
+  }
   this.file = file;
   // Various properties that delegate to the scroller
   (function(me, scroller) {
@@ -284,23 +292,28 @@ FilePane.prototype = {
       break;
     }
   },
+  /**
+   * Moves the cursor to the given offset. This is almost identical to just
+   * setting the cursor property except it accepts strings.
+   */
+  jumpTo: function(offset) {
+    if (typeof offset == 'string') {
+      // Parse it using parseInt to allow 0x1F and things to work. This means
+      // dumb things like 0apple will work, but whatever.
+      offset = parseInt(offset);
+    }
+    if (offset >= 0 && offset <= this.file.size) {
+      this._scroller.cursor = offset;
+    }
+  },
+  /**
+   * This is likely going to be moved up a level.
+   */
   showJumpTo: function() {
     var me = this;
     bootbox.prompt("Jump to address", function(result) {
-      // Convert the string to a number using parseInt so that stuff like
-      // 0x1F works
-      var addr = parseInt(result);
-      if (addr >= 0 && addr < me.file.size) {
-        // More to trap NaN than anything else
-        me._scroller.scrollToLine(Math.floor(addr/16));
-      }
+      me.jumpTo(result);
     });
-  },
-  showFind: function() {
-    // does nothing (yet)
-  },
-  showJavaScriptPane: function() {
-    // does nothing (yet)
   },
   showStrings: function() {
     if (!this._stringsPane) {

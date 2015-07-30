@@ -48,6 +48,11 @@ function StringsPane(pane, file) {
   div.className = 'strings';
   this.scroller = new StringsScroller(div);
   pane.contents.appendChild(div);
+  if (pane.active)
+    div.focus();
+  pane.on('should-focus', (function(element) {
+    return function() { element.focus(); };
+  })(div));
   strings.scan(file, (function(scroller) {
     return function(err, str, offset, encoding) {
       scroller._addString(offset, str);

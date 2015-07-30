@@ -75,16 +75,23 @@ ul.tabs {
     margin: 0 -1px -1px 0;
     padding: 4px 1em;
     border: solid 1px @hexedTabColor;
-    span {
-      display: inline-block;
-    }
+    white-space: nowrap;
     a {
       display: inline-block;
-      margin-left: 0.5em;
-      width: 1em;
-      height: 1em;
-      font-size: 8pt;
-      line-height: 14pt;
+      &.title {
+        &, &:hover {
+          text-decoration: none;
+          color: @hexedTabColor;
+        }
+        // Should we set a max width?
+      }
+      &.close {
+        margin-left: 0.5em;
+        width: 1em;
+        height: 1em;
+        font-size: 8pt;
+        line-height: 14pt;
+      }
     }
     &.active {
       background-color: @hexedActiveTabBackground;

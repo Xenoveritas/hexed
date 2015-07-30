@@ -123,10 +123,14 @@ Workspace.Pane = function(workspace, id) {
       event.preventDefault();
     };
   })(this), false);
-  tab.appendChild(tabTitle = document.createElement('span'));
+  tab.appendChild(tabTitle = document.createElement('a'));
+  tabTitle.setAttribute('href', '#_pane_' + id);
+  tabTitle.className = 'title';
   tabTitle.innerText = title;
   tab.appendChild(tabButton = document.createElement('a'));
+  tabTitle.setAttribute('href', '#_close_' + id);
   tabButton.innerHTML = '\u2573';
+  tabButton.className = 'close';
   tabButton.addEventListener('click', (function(me) {
     return function(event) {
       event.preventDefault();
@@ -140,6 +144,12 @@ Workspace.Pane = function(workspace, id) {
   // Create properties
   Object.defineProperty(this, 'workspace', {
     value: workspace,
+    enumerable: true
+  });
+  Object.defineProperty(this, 'active', {
+    get: function() {
+      return workspace.activePane === this;
+    },
     enumerable: true
   });
   Object.defineProperty(this, 'id', {
@@ -173,7 +183,16 @@ Workspace.Pane.prototype._deactivate = function() {
 Workspace.Pane.prototype._activate = function() {
   this.contents.style.display = 'block';
   this.tab.className = 'tab active';
+  this.focus();
   this.emit('focus');
+};
+
+/**
+ * Indicates that the pane should request keyboard focus. The default emits a
+ * 'should-focus' event which can be handled as desired.
+ */
+Workspace.Pane.prototype.focus = function() {
+  this.emit('should-focus');
 };
 
 Workspace.Pane.prototype.doMenuCommand = function(command) {
@@ -233,13 +252,15 @@ WorkspaceContents.prototype = {
   },
   set activePane(activePane) {
     if (activePane === this._activePane) {
-      // No point in reactivating the already active pane.
+      // Just make sure it's focused.
+      this._activePane.focus();
       return;
     }
     // Make sure that active pane is one of ours
     if (this._panes.some(function(pane) {
       return pane === activePane;
     })) {
+      console.log('activating ' + activePane.id);
       // Deactivate the currently active pane (if there is one)
       if (this._activePane)
         this._activePane._deactivate();
