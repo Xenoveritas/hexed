@@ -271,6 +271,7 @@ HexedScroller.prototype._clampOffset = function(offset) {
 };
 
 function FilePane(pane, file, workspace) {
+  this.pane = pane;
   pane.title = file.filename;
   this.workspace = workspace;
   // Generate our UI.
@@ -287,6 +288,13 @@ function FilePane(pane, file, workspace) {
   pane.on('focus', (function(scroller) {
     return function() { scroller.onresize(); };
   })(this._scroller));
+  pane.on('closed', (function(me) {
+    return function() {
+      // Cleanup function
+      me._scroller.destroy();
+      me.file.close();
+    };
+  })(this));
   if (pane.active) {
     // Focus immediately
     this._container.focus();
@@ -367,8 +375,7 @@ FilePane.prototype = {
    * file object).
    */
   close: function() {
-    this.destroy();
-    this.file.close();
+    this.pane.close();
   }
 };
 

@@ -179,6 +179,12 @@ Workspace.Pane = function(workspace, id) {
     },
     enumerable: true
   });
+  Object.defineProperty(this, 'closed', {
+    get: function() {
+      return workspace.containsPane(this);
+    },
+    enumerable: true
+  });
   Object.defineProperty(this, 'id', {
     value: id,
     enumerable: true
@@ -295,6 +301,11 @@ WorkspaceContents.prototype = {
       this._activePane._activate();
       this.workspace._updateTitle();
     }
+  },
+  containsPane: function(pane) {
+    return this._panes.some(function(p) {
+      return p === pane;
+    });
   },
   _addPane: function(pane) {
     // For now, assume the pane isn't being double-added, as this function is
