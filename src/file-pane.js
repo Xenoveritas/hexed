@@ -284,6 +284,9 @@ function FilePane(pane, file, workspace) {
   pane.on('should-focus', (function(element) {
     return function() { element.focus(); };
   })(this._container));
+  pane.on('focus', (function(scroller) {
+    return function() { scroller.onresize(); };
+  })(this._scroller));
   if (pane.active) {
     // Focus immediately
     this._container.focus();

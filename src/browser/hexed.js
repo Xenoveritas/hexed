@@ -54,9 +54,8 @@ function openNewWindow(files) {
   var newWindow = new HexedWindow();
   addWindow(newWindow);
   newWindow.once('ready', function() {
-    // Currently just open "whatever the first one is"
     if (files && files.length > 0)
-      newWindow.open(files[0]);
+      newWindow.open(files);
   });
 }
 

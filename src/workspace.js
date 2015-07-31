@@ -52,6 +52,33 @@ Workspace.prototype = {
       }
     });
   },
+  /**
+   * Open multiple files at once. The callback will be called once all files
+   * have either opened or failed to open.
+   */
+  openFiles: function(filenames, callback) {
+    var me = this, left = filenames.length, errs = null, panes = [],
+      cb = function(err, pane) {
+        if (err) {
+          if (errs = null) {
+            errs = [ err ];
+          } else {
+            errs.push(err);
+          }
+        } else {
+          panes.push(pane);
+        }
+        left--;
+        if (left <= 0) {
+          if (callback) {
+            callback(errs, panes);
+          }
+        }
+      };
+    filenames.forEach(function(filename) {
+      me.openFile(filename, cb);
+    });
+  },
   _createFilePane: function(file) {
     var pane = this.createPane();
     return new FilePane(pane, file, this);

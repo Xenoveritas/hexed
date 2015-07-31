@@ -9,7 +9,7 @@ var path = require('path');
 var windowId = null;
 
 // Can process.platform ever contain things like spaces? I dunno. Just replace
-// any whitespace with - anyway.
+// any whitespace with '-' anyway.
 document.body.className = 'platform-' + process.platform.replace(/\s/, '-');
 
 // Add drag and drop handlers so you can drop a file on the window and it will
@@ -37,7 +37,7 @@ contents.addEventListener('drop', function(event) {
     for (var i = 0; i < event.dataTransfer.files.length; i++) {
       files.push(event.dataTransfer.files[i].path);
     }
-    ipc.send('file-dropped', windowId, files);
+    ipc.send('files-dropped', windowId, files);
   }
 }, false);
 
@@ -53,8 +53,8 @@ ipc.on('set-id', function(id) {
   windowId = id;
 });
 
-ipc.on('open-file', function(id, filename) {
-  workspace.openFile(filename);
+ipc.on('open-files', function(filenames) {
+  workspace.openFiles(filenames);
 });
 
 ipc.on('menu', function(command) {

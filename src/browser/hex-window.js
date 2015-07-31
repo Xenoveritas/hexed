@@ -18,11 +18,10 @@ var id = 0;
  */
 var hexedWindows = {};
 
-ipc.on('file-dropped', function(event, winId, files) {
+ipc.on('files-dropped', function(event, winId, files) {
   var win = hexedWindows[winId];
   if (win) {
-    // TODO: Support multiple files
-    win.open(files[0]);
+    win.open(files);
   }
 });
 
@@ -37,6 +36,7 @@ function HexedWindow() {
   hexedWindows[this.id] = this;
   this._loaded = false;
   this._pendingMessages = [];
+  this._openFiles = [];
   this.window.webContents.on('will-navigate', function(event) {
     // Never load up new contents - prevents drag and drop from loading files
     // directly into the webview
@@ -58,17 +58,17 @@ function HexedWindow() {
 }
 
 HexedWindow.prototype = {
-  _openFile: null,
   /**
    * Dev utility: reload all HTML for the window.
    */
   reload: function() {
     this.window.reloadIgnoringCache();
-    if (this._openFile) {
+    if (this._openFiles.length > 0) {
       // Bind a new ready listener
-      var me = this;
+      var me = this, files = this._openFiles;
+      this._openFiles = [];
       this.window.once('ready', function() {
-        me.open(me._openFile);
+        me.open(files);
       });
     }
   },
@@ -80,14 +80,25 @@ HexedWindow.prototype = {
     this.window.once(event, handler);
   },
   /**
-   * Open a given file.
-   * <p>
-   * At present a single window can only show one file. This will likely change
-   * in the future but you gotta start somewhere.
+   * Open the given file/files. If given a string, opens that single file. If
+   * given an array, opens all files given.
    */
   open: function(path) {
-    this._openFile = path;
-    this.window.webContents.send('open-file', this._tabId++, path);
+    if (typeof path == 'string') {
+      this.window.webContents.send('open-files', [ path ]);
+      this._openFiles.push(path);
+    } else if (typeof path == 'object' && typeof path.forEach == 'function') {
+      var paths = [];
+      path.forEach(function(p) {
+        if (typeof p == 'string') {
+          paths.push(p);
+        }
+      });
+      if (paths.length > 0) {
+        this.window.webContents.send('open-files', paths);
+        Array.prototype.push.apply(this._openFiles, paths);
+      }
+    }
   },
   /**
    * Show the open file dialog, allowing the user to open a file.
@@ -96,9 +107,7 @@ HexedWindow.prototype = {
     var me = this;
     dialog.showOpenDialog(this.window, {}, function(files) {
       if (files) {
-        // At present we only deal with a single file at a time, so just pick
-        // the first one, I guess.
-        me.open(files[0]);
+        files.forEach(function(f) { me.open(f); });
       }
     });
   },
