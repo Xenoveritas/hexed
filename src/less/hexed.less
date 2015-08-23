@@ -78,6 +78,7 @@ ul.tabs {
     white-space: nowrap;
     a {
       display: inline-block;
+      cursor: default;
       &.title {
         &, &:hover {
           text-decoration: none;
@@ -86,11 +87,20 @@ ul.tabs {
         // Should we set a max width?
       }
       &.close {
+        cursor: default;
+        float: none;
+        text-shadow: none;
         margin-left: 0.5em;
-        width: 1em;
-        height: 1em;
-        font-size: 8pt;
+        width: 14pt;
+        height: 14pt;
+        font-size: 7pt;
         line-height: 14pt;
+        vertical-align: middle;
+        border-radius: 7pt;
+        text-align: center;
+        &:hover {
+          background-color: mix(@hexedActiveTabBackground, @hexedActiveTabColor);
+        }
       }
     }
     &.active {
@@ -98,6 +108,9 @@ ul.tabs {
       color: @hexedActiveTabColor;
       border-bottom: none;
       padding-bottom: 5px;
+      a.close {
+        background-color: mix(@hexedActiveTabBackground, @hexedActiveTabColor);
+      }
     }
   }
 }
