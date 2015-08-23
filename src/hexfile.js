@@ -9,7 +9,7 @@ var fs = require('fs'),
   events = require('events'),
   LRU = require('lru-cache');
 
-var debuglog = function() { console.log(util.format.apply(util, arguments)); };
+var debuglog = require('./debuglog').debuglog('hexfile');
 
 /**
  * Size of a "block" - currently set to 4KB.
@@ -70,7 +70,7 @@ Block.prototype = {
           // It looks like the only way this will happen is if we go off the end
           // of the file. TODO: check to make sure that's true.
         }
-        console.log("Block " + me.index + " loaded.");
+        debuglog("Block %d loaded.", me.index);
         me.pending = false;
         if (typeof callbacks == 'function') {
           callbacks(null, me);
@@ -360,7 +360,7 @@ HexFile.prototype.scan = function(callback, offset, lastOffset) {
   if (!(index < lastIndex)) {
     lastIndex = index;
   }
-  console.log('scan: scan from ' + index + ' to ' + lastIndex);
+  debuglog('scan: scan from %d to %d', index, lastIndex);
   readNextBlock();
 };
 

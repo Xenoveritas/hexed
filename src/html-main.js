@@ -49,7 +49,6 @@ var workspace = new Workspace();
 
 // Set up IPC.
 ipc.on('set-id', function(id) {
-  console.log("Got id: " + id);
   windowId = id;
 });
 

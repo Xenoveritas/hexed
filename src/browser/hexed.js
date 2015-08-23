@@ -42,9 +42,7 @@ function addWindow(window) {
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
-  console.log("All windows are closed");
   if (process.platform != 'darwin') {
-    console.log("This isn't OS X, quitting");
     app.quit();
   }
 });

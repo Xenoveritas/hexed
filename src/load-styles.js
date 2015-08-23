@@ -1,6 +1,7 @@
 var less = require('less'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  debuglog = require('./debuglog').debuglog('load-styles');
 
 // TODO: At some point, the generated files should probably be cached and we
 // should load them that way. Actually I guess ultimately all that stuff should
@@ -10,10 +11,10 @@ function loadSheet(filename, callback) {
   if (arguments.length < 2 || callback == null) {
     callback = function() { };
   }
-  console.log("read " + filename);
+  debuglog("read %s", filename);
   fs.readFile(filename, { encoding: 'utf8' }, function(err, src) {
     if (err) {
-      console.log("error reading " + filename + ": " + err);
+      debuglog("error reading %s: %j", filename, err);
       return callback(err);
     } else {
       less.render(src, { filename: filename }).then(function(result) {
@@ -23,6 +24,9 @@ function loadSheet(filename, callback) {
         style.appendChild(document.createTextNode(result.css));
         document.head.appendChild(style);
       }, function(err) {
+        // FIXME: Arguably this should be sent to console.error, but we're in
+        // the browser context, so it can't. This should be a "higher level"
+        // error or something.
         console.log("LESS error: " + err);
         callback(err);
       })

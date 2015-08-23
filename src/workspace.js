@@ -6,7 +6,8 @@ var util = require('util'),
   events = require('events'),
   FilePane = require('./file-pane'),
   AboutPane = require('./about-pane'),
-  hexfile = require('./hexfile');
+  hexfile = require('./hexfile'),
+  debuglog = require('./debuglog').debuglog('workspace');
 
 /**
  * The Workspace. The Workspace is divided into two main parts: "sidebars" which
@@ -43,9 +44,7 @@ Workspace.prototype = {
     var me = this;
     hexfile.open(filename, function(err, file) {
       if (err) {
-        // TODO: Show error
-        console.log(err);
-        callback(err);
+        debuglog("Error opening file: " + err);
       } else {
         // Create the pane for this file
         callback(null, me._createFilePane(file));
@@ -102,7 +101,7 @@ Workspace.prototype = {
       this._aboutPane = this.createPane();
       new AboutPane(this._aboutPane);
       this._aboutPane.on('closed', (function(me) { return function() {
-        console.log('closed');
+        debuglog('About pane closed.');
         me._aboutPane = null;
       }; })(this));
     }
@@ -143,7 +142,6 @@ Workspace.Pane = function(workspace, id) {
   var title = 'New';
   this.contents = document.createElement('div');
   var tab = this.tab = document.createElement('li'), tabTitle, tabButton;
-  console.log('adding event listener');
   tab.addEventListener('click', (function(me) {
     return function(event) {
       me.workspace.activePane = me;
@@ -293,7 +291,7 @@ WorkspaceContents.prototype = {
     if (this._panes.some(function(pane) {
       return pane === activePane;
     })) {
-      console.log('activating ' + activePane.id);
+      debuglog('activating %s', activePane.id);
       // Deactivate the currently active pane (if there is one)
       if (this._activePane)
         this._activePane._deactivate();

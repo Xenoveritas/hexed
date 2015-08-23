@@ -6,7 +6,8 @@
 
 var BrowserWindow = require('browser-window'),  // Module to create native browser window.
   dialog = require('dialog'),
-  ipc = require('ipc');
+  ipc = require('ipc'),
+  debuglog = require('util').debuglog('hex-window');
 
 /**
  * Internal ID for windows. Just keeps on counting up.
@@ -51,7 +52,7 @@ function HexedWindow() {
   this.window.on('closed', (function(me) {
     return function(event) {
       // Kill this window entirely as it's no longer valid
-      console.log("Window %s closed", me.id);
+      debuglog("Window %s closed", me.id);
       delete hexedWindows[me.id];
     };
   })(this));
