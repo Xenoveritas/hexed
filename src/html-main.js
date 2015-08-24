@@ -3,8 +3,8 @@
  * the window and the various open tabs inside it.
  */
 
-var ipc = require('ipc');
-var path = require('path');
+var ipc = require('ipc'),
+  path = require('path');
 
 var windowId = null;
 
@@ -29,8 +29,6 @@ contents.addEventListener('dragover', function(event) {
   return false;
 });
 contents.addEventListener('drop', function(event) {
-  console.log("Drop");
-  console.log(event);
   if (event.dataTransfer.files.length > 0) {
     // We actually want to notify our parent controller of this drop
     var files = [];

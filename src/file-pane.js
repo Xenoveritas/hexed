@@ -247,6 +247,12 @@ HexedScroller.prototype.onkeydown = function(event) {
   case 'Down':
     this.cursor += this.bytesPerLine;
     break;
+  case 'PageUp':
+    this.cursor -= this.bytesPerLine * this.getLinesPerPage();
+    break;
+  case 'PageDown':
+    this.cursor += this.bytesPerLine * this.getLinesPerPage();
+    break;
   default:
     return false;
   }

@@ -260,6 +260,9 @@ Scroller.prototype = {
       page = this.lineHeight;
     this.scrollBy(page * delta);
   },
+  getLinesPerPage: function() {
+    return Math.max(1, Math.floor(this.container.offsetHeight / this.lineHeight) - 1);
+  },
   /**
    * Scroll directly a specific virtual y. The y will be clamped to the size of
    * the virtual document.
