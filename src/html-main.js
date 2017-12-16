@@ -2,9 +2,10 @@
  * This module is the main "controller" for the HTML side of hexed. It maintains
  * the window and the various open tabs inside it.
  */
+"use strict";
 
-var ipc = require('ipc'),
-  path = require('path');
+const {ipcRenderer} = require('electron');
+const path = require('path');
 
 var windowId = null;
 
@@ -35,7 +36,7 @@ contents.addEventListener('drop', function(event) {
     for (var i = 0; i < event.dataTransfer.files.length; i++) {
       files.push(event.dataTransfer.files[i].path);
     }
-    ipc.send('files-dropped', windowId, files);
+    ipcRenderer.send('files-dropped', windowId, files);
   }
 }, false);
 
@@ -46,15 +47,15 @@ var Workspace = require('./workspace').Workspace;
 var workspace = new Workspace();
 
 // Set up IPC.
-ipc.on('set-id', function(id) {
+ipcRenderer.on('set-id', (event, id) => {
   windowId = id;
 });
 
-ipc.on('open-files', function(filenames) {
+ipcRenderer.on('open-files', (event, filenames) => {
   workspace.openFiles(filenames);
 });
 
-ipc.on('menu', function(command) {
+ipcRenderer.on('menu', (event, command) => {
   // For the most part menu things should be passed straight through to the
   // workspace to decide how it wants to deal with them.
   workspace.doMenuCommand(command);

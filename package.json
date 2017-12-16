@@ -3,20 +3,20 @@
   "version": "0.0.0",
   "description": "A hex file viewer",
   "repository": "https://github.com/Xenoveritas/hexed",
-  "main": "src/browser/hexed.js",
+  "main": "main.js",
   "scripts": {
-    "win": "node_modules\\electron-prebuilt\\dist\\electron .",
-    "osx": "node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron ."
+    "win": ".\\node_modules\\.bin\\electron .",
+    "osx": "./node_modules/.bin/electron ."
   },
   "license": "MIT",
   "devDependencies": {
-    "electron-prebuilt": "^0.28.3"
+    "electron": "^1.7.9"
   },
   "dependencies": {
     "bootbox": "^4.4.0",
-    "bootstrap": "^3.3.5",
-    "jquery": "^2.1.4",
-    "less": "^2.5.1",
-    "lru-cache": "^2.6.5"
+    "bootstrap": "^3.3.7",
+    "jquery": "^2.2.4",
+    "less": "^2.7.3",
+    "lru-cache": "^2.7.3"
   }
 }
