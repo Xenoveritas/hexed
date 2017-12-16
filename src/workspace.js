@@ -13,51 +13,50 @@ var util = require('util'),
  * The Workspace. The Workspace is divided into two main parts: "sidebars" which
  * can be next to the main content, and the main content in the middle.
  */
-function Workspace() {
-  this.dom = document.createElement('hexed-workspace');
-  this.dom.setAttribute('tabindex', '-1');
-  document.body.appendChild(this.dom);
-  // TODO: File tree on left
-  Object.defineProperty(this, 'contents', {
-    value: new WorkspaceContents(this, this.dom),
-    enumerable: true
-  });
-  this._id = 0;
-}
+class Workspace {
+  constructor() {
+    this.dom = document.createElement('hexed-workspace');
+    this.dom.setAttribute('tabindex', '-1');
+    document.body.appendChild(this.dom);
+    // TODO: File tree on left
+    Object.defineProperty(this, 'contents', {
+      value: new WorkspaceContents(this, this.dom),
+      enumerable: true
+    });
+    this._id = 0;
+  }
 
-Workspace.prototype = {
   get activePane() {
     return this.contents.activePane;
-  },
+  }
   set activePane(activePane) {
     this.contents.activePane = activePane;
-  },
+  }
   /**
    * Opens a givne file.
    */
-  openFile: function(filename, callback) {
+  openFile(filename, callback) {
     // TODO: If the file is already open, bring that to the front.
     // Callback isn't required, if it isn't given, make it a no-op.
     if (!callback) {
       callback = function() { };
     }
-    var me = this;
-    hexfile.open(filename, function(err, file) {
+    hexfile.open(filename, (err, file) => {
       if (err) {
         debuglog("Error opening file: " + err);
       } else {
         // Create the pane for this file
-        callback(null, me._createFilePane(file));
+        callback(null, this._createFilePane(file));
       }
     });
-  },
+  }
   /**
    * Open multiple files at once. The callback will be called once all files
    * have either opened or failed to open.
    */
-  openFiles: function(filenames, callback) {
-    var me = this, left = filenames.length, errs = null, panes = [],
-      cb = function(err, pane) {
+  openFiles(filenames, callback) {
+    var left = filenames.length, errs = null, panes = [],
+      cb = (err, pane) => {
         if (err) {
           if (errs = null) {
             errs = [ err ];
@@ -74,19 +73,17 @@ Workspace.prototype = {
           }
         }
       };
-    filenames.forEach(function(filename) {
-      me.openFile(filename, cb);
-    });
-  },
-  _createFilePane: function(file) {
+    filenames.forEach(filename => this.openFile(filename, cb));
+  }
+  _createFilePane(file) {
     var pane = this.createPane();
     return new FilePane(pane, file, this);
-  },
+  }
   /**
    * Creates a new Pane within the workspace. Panes are simply areas where HTML
    * content can be shown. Panes are created immediately.
    */
-  createPane: function(activate) {
+  createPane(activate) {
     if (arguments.length == 0)
       activate = true;
     var pane = new Workspace.Pane(this, this._id++);
@@ -94,20 +91,20 @@ Workspace.prototype = {
     if (activate)
       this.contents.activePane = pane;
     return pane;
-  },
-  showAbout: function() {
+  }
+  showAbout() {
     if (!this._aboutPane) {
       // Create the about pane
       this._aboutPane = this.createPane();
       new AboutPane(this._aboutPane);
-      this._aboutPane.on('closed', (function(me) { return function() {
+      this._aboutPane.on('closed', () => {
         debuglog('About pane closed.');
-        me._aboutPane = null;
-      }; })(this));
+        this._aboutPane = null;
+      });
     }
     this.activePane = this._aboutPane;
-  },
-  doMenuCommand: function(command) {
+  }
+  doMenuCommand(command) {
     if (command == 'close-pane') {
       // A special case that gets handled here.
       var pane = this.activePane;
@@ -124,8 +121,8 @@ Workspace.prototype = {
     var pane = this.contents.activePane;
     if (pane)
       pane.doMenuCommand(command);
-  },
-  _updateTitle: function() {
+  }
+  _updateTitle() {
     var pane = this.activePane;
     if (pane) {
       document.title = pane.title + ' - Hexed';
@@ -250,37 +247,37 @@ Workspace.Pane.prototype.close = function() {
 /**
  * The workspace contents manages the actual tabs.
  */
-function WorkspaceContents(workspace, container) {
-  this.workspace = workspace;
-  this.dom = document.createElement('hexed-workspace-axis');
-  this.dom.className = 'vertical';
-  this.topContainer = document.createElement('hexed-panel-container');
-  this.topContainer.className = 'top';
-  this.dom.appendChild(this.topContainer);
-  this.panesContainer = document.createElement('hexed-panel-container');
-  this.panesContainer.className = 'panes';
-  this.dom.appendChild(this.panesContainer);
-  this.tabDom = document.createElement('ul');
-  this.tabDom.className = 'tabs';
-  this.panesContainer.appendChild(this.tabDom);
-  this.bottomContainer = document.createElement('hexed-panel-container');
-  this.bottomContainer.className = 'bottom';
-  this.statusBar = new StatusBar(this.bottomContainer);
-  this.dom.appendChild(this.bottomContainer);
-  container.appendChild(this.dom);
-  // As we currently have no real contents, make a place-holder
-  this.placeholder = document.createElement('div');
-  this.placeholder.className = 'placeholder';
-  this.placeholder.innerHTML = 'Use File, Open... to open a file or drag and drop a file onto this window.';
-  this.panesContainer.appendChild(this.placeholder);
-  this._activePane = null;
-  this._panes = [];
-}
+class WorkspaceContents {
+  constructor(workspace, container) {
+    this.workspace = workspace;
+    this.dom = document.createElement('hexed-workspace-axis');
+    this.dom.className = 'vertical';
+    this.topContainer = document.createElement('hexed-panel-container');
+    this.topContainer.className = 'top';
+    this.dom.appendChild(this.topContainer);
+    this.panesContainer = document.createElement('hexed-panel-container');
+    this.panesContainer.className = 'panes';
+    this.dom.appendChild(this.panesContainer);
+    this.tabDom = document.createElement('ul');
+    this.tabDom.className = 'tabs';
+    this.panesContainer.appendChild(this.tabDom);
+    this.bottomContainer = document.createElement('hexed-panel-container');
+    this.bottomContainer.className = 'bottom';
+    this.statusBar = new StatusBar(this.bottomContainer);
+    this.dom.appendChild(this.bottomContainer);
+    container.appendChild(this.dom);
+    // As we currently have no real contents, make a place-holder
+    this.placeholder = document.createElement('div');
+    this.placeholder.className = 'placeholder';
+    this.placeholder.innerHTML = 'Use File, Open... to open a file or drag and drop a file onto this window.';
+    this.panesContainer.appendChild(this.placeholder);
+    this._activePane = null;
+    this._panes = [];
+  }
 
-WorkspaceContents.prototype = {
   get activePane() {
     return this._activePane;
-  },
+  }
   set activePane(activePane) {
     if (activePane === this._activePane) {
       // Just make sure it's focused.
@@ -299,13 +296,13 @@ WorkspaceContents.prototype = {
       this._activePane._activate();
       this.workspace._updateTitle();
     }
-  },
-  containsPane: function(pane) {
+  }
+  containsPane(pane) {
     return this._panes.some(function(p) {
       return p === pane;
     });
-  },
-  _addPane: function(pane) {
+  }
+  _addPane(pane) {
     // For now, assume the pane isn't being double-added, as this function is
     // conceptually "private".
     this._panes.push(pane);
@@ -315,8 +312,8 @@ WorkspaceContents.prototype = {
     this.tabDom.appendChild(pane.tab);
     // And the pane.
     this.panesContainer.appendChild(pane.contents);
-  },
-  _closePane: function(pane) {
+  }
+  _closePane(pane) {
     // Find the pane
     var i;
     for (i = 0; i < this._panes.length; i++) {
@@ -339,11 +336,19 @@ WorkspaceContents.prototype = {
       this.activePane = this._panes[i];
     }
   }
+  goToPane(index) {
+    if (index >= 0 && index < this._panes.length)
+      this.activePane = this._panes[index];
+  }
+  goForwardPanes(count) {
+  }
 }
 
-function StatusBar(container) {
-  this.dom = document.createElement('status-bar');
-  container.appendChild(this.dom);
+class StatusBar {
+  constructor(container) {
+    this.dom = document.createElement('status-bar');
+    container.appendChild(this.dom);
+  }
 }
 
 exports.Workspace = Workspace;
