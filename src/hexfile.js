@@ -2,45 +2,46 @@
  * @module hex-file
  * Module for accessing chunks of a file
  */
+"use strict";
 
-var fs = require('fs'),
+const fs = require('fs'),
   path = require('path'),
   util = require('util'),
   events = require('events'),
   LRU = require('lru-cache');
 
-var debuglog = require('./debuglog').debuglog('hexfile');
+const debuglog = require('./debuglog').debuglog('hexfile');
 
 /**
  * Size of a "block" - currently set to 4KB.
  */
-var BLOCK_SIZE = 4096;
+const BLOCK_SIZE = 4096;
 
 /**
  * A "block". A block is simply a block of the file that gets kept around cached
  * in order to immediately populate the UI with data from the file.
  */
-function Block(index, buffer) {
-  this.buffer = buffer == null ? new Buffer(BLOCK_SIZE) : buffer;
-  /**
-   * Actual length of the block. This is nearly always BLOCK_SIZE - the sole
-   * exception is the last block of the file, which can (or not, if the file
-   * is an exact multiple of blocks) be less.
-   */
-  this.length = 0;
-  /**
-   * Whether or not this block is pending.
-   */
-  this.pending = true;
-  this.index = index;
-  this._callback = null;
-}
+class Block {
+  constructor(index, buffer) {
+    this.buffer = buffer == null ? new Buffer(BLOCK_SIZE) : buffer;
+    /**
+     * Actual length of the block. This is nearly always BLOCK_SIZE - the sole
+     * exception is the last block of the file, which can (or not, if the file
+     * is an exact multiple of blocks) be less.
+     */
+    this.length = 0;
+    /**
+     * Whether or not this block is pending.
+     */
+    this.pending = true;
+    this.index = index;
+    this._callback = null;
+  }
 
-Block.prototype = {
-  _load: function(index, hf, callback) {
+  _load(index, hf, callback) {
     // If we're already loading, just add the callback to the list.
     if (this._callback !== null) {
-      if (typeof this._callback == 'function') {
+      if (typeof this._callback === 'function') {
         var cb = this._callback;
         this._callback = [ cb, callback ];
       } else {
@@ -54,34 +55,32 @@ Block.prototype = {
     // Figure out the offset and length
     var offset = index * BLOCK_SIZE;
     this.length = Math.min(BLOCK_SIZE, hf.size - offset);
-    fs.read(hf.fd, this.buffer, 0, this.length, offset, (function(me) {
-      return function(err, bytesRead, buffer) {
-        var callbacks = me._callback;
-        me._callback = null;
-        if (err) {
-          if (typeof callbacks == 'function') {
-            callbacks(err);
-          } else {
-            callbacks.forEach(function(cb) { cb(err); });
-          }
-          return;
-        }
-        if (bytesRead < me.length) {
-          // It looks like the only way this will happen is if we go off the end
-          // of the file. TODO: check to make sure that's true.
-        }
-        debuglog("Block %d loaded.", me.index);
-        me.pending = false;
+    fs.read(hf.fd, this.buffer, 0, this.length, offset, (err, bytesRead, buffer) => {
+      let callbacks = this._callback;
+      this._callback = null;
+      if (err) {
         if (typeof callbacks == 'function') {
-          callbacks(null, me);
+          callbacks(err);
         } else {
-          callbacks.forEach(function(cb) { cb(null, me); });
+          callbacks.forEach(function(cb) { cb(err); });
         }
         return;
-      };
-    })(this));
+      }
+      if (bytesRead < this.length) {
+        // It looks like the only way this will happen is if we go off the end
+        // of the file. TODO: check to make sure that's true.
+      }
+      debuglog("Block %d loaded.", this.index);
+      this.pending = false;
+      if (typeof callbacks === 'function') {
+        callbacks(null, this);
+      } else {
+        callbacks.forEach(cb => cb(null, this));
+      }
+      return;
+    });
   }
-};
+}
 
 /**
  * A hex file.

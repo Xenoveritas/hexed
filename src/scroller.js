@@ -52,26 +52,24 @@ function Scroller(container) {
   /**
    * Load timeout function. Simply invokes _load.
    */
-  this._loadTimeoutFunction = (function(me) { return function() {
+  this._loadTimeoutFunction = () => {
     // Clear the timeout.
-    me._loadTimeout = false;
-    me.loadLines(me.getFirstLine(), me.getVisibleLines());
-  }; })(this);
-  this._resizeListener = (function(me) { return function() { me.onresize(); }; })(this);
+    this._loadTimeout = false;
+    this.loadLines(this.getFirstLine(), this.getVisibleLines());
+  };
+  this._resizeListener = () => this.onresize();
   window.addEventListener('resize', this._resizeListener, false);
   // Add wheel scroll events
-  this._wheelListener = (function(me) {
-    return function(event) {
-      // We want the wheel delta to deal with smooth scrolling. Note that this
-      // is probably Chrome-specific. Who cares.
-      me.scrollBy(-event.wheelDeltaY);
-      event.preventDefault();
-    }
-  })(this);
+  this._wheelListener = (event) => {
+    // We want the wheel delta to deal with smooth scrolling. Note that this
+    // is probably Chrome-specific. Who cares.
+    this.scrollBy(-event.wheelDeltaY);
+    event.preventDefault();
+  };
   this.container.addEventListener('mousewheel', this._wheelListener, false);
   // Add key listeners
-  this._keyListener = (function(me) { return function(event) {
-    if (me.onkeydown(event) === true)
+  this._keyListener = (event) => {
+    if (this.onkeydown(event) === true)
       return;
     // We only care about keyboard keys when modifier aren't down ... mostly.
     if (event.altKey || event.ctrlKey || event.shiftKey)
@@ -79,58 +77,58 @@ function Scroller(container) {
     if (event.metaKey) {
       if (useOSXShortcuts) {
         // We have two meta key combinations we allow in this case:
-        if (event.keyIdentifier == 'Up') {
-          me.scrollTo(0);
+        if (event.key == 'ArrowUp') {
+          this.scrollTo(0);
           event.preventDefault();
-        } else if (event.keyIdentifier == 'Down') {
-          me.scrollTo(me.documentHeight);
+        } else if (event.key == 'ArrowDown') {
+          this.scrollTo(this.documentHeight);
           event.preventDefault();
         }
       }
       return;
     }
     console.log(event);
-    switch (event.keyIdentifier) {
-      case 'Up':
+    switch (event.key) {
+      case 'ArrowUp':
         if (event.metaKey && useOSXShortcuts) {
-          me.scrollTo(0);
+          this.scrollTo(0);
         } else {
-          me.scrollByLines(-1);
+          this.scrollByLines(-1);
         }
         break;
-      case 'Down':
+      case 'ArrowDown':
         if (event.metaKey && useOSXShortcuts) {
-          me.scrollTo(me.documentHeight);
+          this.scrollTo(this.documentHeight);
         } else {
-          me.scrollByLines(1);
+          this.scrollByLines(1);
         }
         break;
       case 'PageUp':
-        me.scrollByPages(-1);
+        this.scrollByPages(-1);
         break;
       case 'PageDown':
-        me.scrollByPages(1);
+        this.scrollByPages(1);
         break;
       case 'Home':
-        me.scrollTo(0);
+        this.scrollTo(0);
         break;
       case 'End':
-        me.scrollTo(me.documentHeight);
+        this.scrollTo(this.documentHeight);
         break;
       default:
         // Just return and let the default do whatever
         return;
     }
     event.preventDefault();
-  }; })(this);
+  };
   this.container.addEventListener('keydown', this._keyListener, false);
   // We still need to generate lines for the available space, but we need to
   // defer that until the document is ready and actually laid out if it
   // currently isn't.
   if (container.offsetHeight == 0) {
-    var handler = (function(me) {
-      var attempts = 0, handler = function() {
-        if (container.offsetHeight == 0) {
+    let handler = ((attempts) => {
+      var attempts = 0, handler = () => {
+        if (container.offsetHeight === 0) {
           // Still not ready, wait another 100ms.
           attempts++;
           if (attempts > 10) {
@@ -140,11 +138,11 @@ function Scroller(container) {
           }
         } else {
           // Ready, generate lines
-          me.onresize();
+          this.onresize();
         }
       }
       return handler;
-    })(this);
+    })(0);
     // Basically we want to defer this to "immediately".
     setTimeout(handler, 10);
   } else {
