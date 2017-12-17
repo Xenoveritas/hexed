@@ -201,8 +201,24 @@ class HexedScroller extends Scroller {
   }
 
   onkeydown(event) {
-    if (event.altKey || event.ctrlKey) {
-      return;
+    if (event.ctrlKey) {
+      switch (event.key) {
+      case 'Home':
+        // Move to the start of the document (but keep our line position).
+        this.cursor = this.cursor % this.bytesPerLine;
+        break;
+      case 'End':
+        // Move to the end of the document
+        // TODO: (but keep our line position).
+        this.cursor = this.file.size;
+        break;
+      default:
+        return false;
+      }
+      return true;
+    }
+    if (event.altKey) {
+      return true;
     }
     if (event.metaKey) {
       if (USE_OSX_SHORTCUTS) {
@@ -247,6 +263,14 @@ class HexedScroller extends Scroller {
       break;
     case 'PageDown':
       this.cursor += this.bytesPerLine * this.getLinesPerPage();
+      break;
+    case 'Home':
+      // Move to the start of the line.
+      this.cursor -= this.cursor % this.bytesPerLine;
+      break;
+    case 'End':
+      // Move to the end of the line.
+      this.cursor += this.bytesPerLine - (this.cursor % this.bytesPerLine) - 1;
       break;
     default:
       return false;
