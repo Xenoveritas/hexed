@@ -50,7 +50,7 @@ class Scrollbar {
   }
 
   /**
-   * Forces the scroll bar to update its visible representation.
+   * Forces the scroll bar to update its visual representation.
    */
   update() {
     if (this._total == 0 || this._total < this._visibleArea) {

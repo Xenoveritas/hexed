@@ -2,8 +2,7 @@
  * Module for dealing with the generic workspace.
  */
 
-var util = require('util'),
-  events = require('events'),
+const EventEmitter = require('events'),
   FilePane = require('./file-pane'),
   AboutPane = require('./about-pane'),
   hexfile = require('./hexfile'),
@@ -135,114 +134,113 @@ class Workspace {
 /**
  * A Pane within the workspace.
  */
-Workspace.Pane = function(workspace, id) {
-  var title = 'New';
-  this.contents = document.createElement('div');
-  var tab = this.tab = document.createElement('li'), tabTitle, tabButton;
-  tab.addEventListener('click', (function(me) {
-    return function(event) {
-      me.workspace.activePane = me;
+class Pane extends EventEmitter {
+  constructor(workspace, id) {
+    super();
+    var title = 'New';
+    this.contents = document.createElement('div');
+    var tab = this.tab = document.createElement('li'), tabTitle, tabButton;
+    tab.addEventListener('click', (event) => {
+      this.workspace.activePane = this;
       event.preventDefault();
-    };
-  })(this), false);
-  tab.appendChild(tabTitle = document.createElement('a'));
-  tabTitle.setAttribute('href', '#_pane_' + id);
-  tabTitle.className = 'title';
-  tabTitle.innerText = title;
-  tab.appendChild(tabButton = document.createElement('a'));
-  tabTitle.setAttribute('href', '#_close_' + id);
-  tabButton.innerHTML = '\u2573';
-  tabButton.className = 'close';
-  tabButton.addEventListener('click', (function(me) {
-    return function(event) {
+    }, false);
+    tab.appendChild(tabTitle = document.createElement('a'));
+    tabTitle.setAttribute('href', '#_pane_' + id);
+    tabTitle.className = 'title';
+    tabTitle.innerText = title;
+    tab.appendChild(tabButton = document.createElement('a'));
+    tabTitle.setAttribute('href', '#_close_' + id);
+    tabButton.innerHTML = '\u2573';
+    tabButton.className = 'close';
+    tabButton.addEventListener('click', (event) => {
       event.preventDefault();
-      me.close();
+      this.close();
       return false;
-    }
-  })(this));
-  this.contents.className = 'pane-contents';
-  this.contents.setAttribute('id', '_pane_' + id);
-  this.tab.setAttribute('id', '_tab_' + id);
-  // Create properties
-  Object.defineProperty(this, 'workspace', {
-    value: workspace,
-    enumerable: true
-  });
-  Object.defineProperty(this, 'active', {
-    get: function() {
-      return workspace.activePane === this;
-    },
-    enumerable: true
-  });
-  Object.defineProperty(this, 'closed', {
-    get: function() {
-      return workspace.containsPane(this);
-    },
-    enumerable: true
-  });
-  Object.defineProperty(this, 'id', {
-    value: id,
-    enumerable: true
-  });
-  Object.defineProperty(this, 'title', {
-    get: function() { return title; },
-    set: function(value) {
-      if (typeof value != 'string')
-        value = value.toString();
-      title = value;
-      tabTitle.innerText = title;
-      if (workspace.activePane === this) {
-        workspace._updateTitle();
-      }
-      return title;
-    },
-    enumerable: true
-  });
+    });
+    this.contents.className = 'pane-contents';
+    this.contents.setAttribute('id', '_pane_' + id);
+    this.tab.setAttribute('id', '_tab_' + id);
+    // Create properties
+    Object.defineProperty(this, 'workspace', {
+      value: workspace,
+      enumerable: true
+    });
+    Object.defineProperty(this, 'active', {
+      get: function() {
+        return workspace.activePane === this;
+      },
+      enumerable: true
+    });
+    Object.defineProperty(this, 'closed', {
+      get: function() {
+        return workspace.containsPane(this);
+      },
+      enumerable: true
+    });
+    Object.defineProperty(this, 'id', {
+      value: id,
+      enumerable: true
+    });
+    Object.defineProperty(this, 'title', {
+      get: function() { return title; },
+      set: function(value) {
+        if (typeof value != 'string')
+          value = value.toString();
+        title = value;
+        tabTitle.innerText = title;
+        if (workspace.activePane === this) {
+          workspace._updateTitle();
+        }
+        return title;
+      },
+      enumerable: true
+    });
+  }
+
+  _deactivate() {
+    this.contents.style.display = 'none';
+    this.tab.className = 'tab';
+    this.emit('blur');
+  }
+
+  _activate() {
+    this.contents.style.display = 'block';
+    this.tab.className = 'tab active';
+    this.focus();
+    this.emit('focus');
+  }
+
+  /**
+   * Indicates that the pane should request keyboard focus. The default emits a
+   * 'should-focus' event which can be handled as desired.
+   */
+  focus() {
+    this.emit('should-focus');
+  }
+
+  doMenuCommand(command) {
+    this.emit('menu', command);
+  }
+
+  /**
+   * Close this pane.
+   */
+  close() {
+    // Just fob this off to the contents
+    let canceled = false;
+    let event = {
+      cancel: function() { canceled = true; }
+    };
+    this.emit('closing', event);
+    if (canceled)
+      return false;
+    // Otherwise, allow it to go through
+    this.workspace.contents._closePane(this);
+    this.emit('closed');
+  }
 }
 
-util.inherits(Workspace.Pane, events.EventEmitter);
-
-Workspace.Pane.prototype._deactivate = function() {
-  this.contents.style.display = 'none';
-  this.tab.className = 'tab';
-  this.emit('blur');
-};
-
-Workspace.Pane.prototype._activate = function() {
-  this.contents.style.display = 'block';
-  this.tab.className = 'tab active';
-  this.focus();
-  this.emit('focus');
-};
-
-/**
- * Indicates that the pane should request keyboard focus. The default emits a
- * 'should-focus' event which can be handled as desired.
- */
-Workspace.Pane.prototype.focus = function() {
-  this.emit('should-focus');
-};
-
-Workspace.Pane.prototype.doMenuCommand = function(command) {
-  this.emit('menu', command);
-};
-
-/**
- * Close this pane.
- */
-Workspace.Pane.prototype.close = function() {
-  // Just fob this off to the contents
-  var canceled = false;
-  var event = {
-    cancel: function() { canceled = true; }
-  };
-  this.emit('closing', event);
-  if (canceled)
-    return false;
-  // Otherwise, allow it to go through
-  this.workspace.contents._closePane(this);
-  this.emit('closed');
-};
+Workspace.Pane = Pane;
 
 /**
  * The workspace contents manages the actual tabs.
