@@ -27,64 +27,62 @@ function convertByte(byte) {
   }
 }
 
-function HexedScroller(container, file) {
-  Scroller.call(this, container);
-  container.style.position = 'absolute';
-  this.file = file;
-  // This may eventually become a proper property with write support.
-  this.bytesPerLine = 16;
-  // Figure out how many lines there are at 16 bytes per line
-  this.setTotalLines(Math.ceil(file.size / this.bytesPerLine));
-  this._widthsCalculated = false;
-  // Create the cursor property.
-  (function(me) {
+class HexedScroller extends Scroller {
+  constructor(container, file) {
+    super(container);
+    container.style.position = 'absolute';
+    this.file = file;
+    // This may eventually become a proper property with write support.
+    this.bytesPerLine = 16;
+    // Figure out how many lines there are at 16 bytes per line
+    this.setTotalLines(Math.ceil(file.size / this.bytesPerLine));
+    this._widthsCalculated = false;
+    // Create the cursor property.
     // Cursor starts as null so we can do this.cursor = 0 to initialize it
-    var cursor = null;
-    Object.defineProperty(me, 'cursor', {
-      get: function() {
+    let cursor = null;
+    Object.defineProperty(this, 'cursor', {
+      get: () => {
         return cursor;
       },
-      set: function(value) {
-        value = me._clampOffset(value);
+      set: (value) => {
+        value = this._clampOffset(value);
         // Note: at present file.size isn't a valid offset since that's one past
         // the end of the file and we don't do editing. With editing it is
         // because it means "append."
-        if (value == me.file.size)
+        if (value == this.file.size)
           value--;
         if (value != null && value !== cursor) {
           // At this point we need to update the DOM to mark the new cursor
           // location.
-          var oldLine = Math.floor(cursor / me.bytesPerLine),
-            newLine = Math.floor(value / me.bytesPerLine);
+          var oldLine = Math.floor(cursor / this.bytesPerLine),
+            newLine = Math.floor(value / this.bytesPerLine);
           cursor = value;
           if (oldLine != newLine) {
-            me.updateLine(oldLine);
+            this.updateLine(oldLine);
           }
-          me.updateLine(newLine);
+          this.updateLine(newLine);
           // Make sure that line is visible
-          me.scrollLineIntoView(newLine);
+          this.scrollLineIntoView(newLine);
         }
         return cursor;
       },
       enumerable: true
     });
-  })(this);
-  // Define the selection start/end property.
-  (function(me) {
+    // Define the selection start/end property.
     var selectionStart = null, selectionEnd = null;
-    Object.defineProperty(me, 'selectionStart', {
-      get: function() {
+    Object.defineProperty(this, 'selectionStart', {
+      get: () => {
         return selectionStart;
       },
-      set: function(value) {
+      set: (value) => {
         if (value === selectionStart)
           return;
-        value = me._clampOffset(value);
+        value = this._clampOffset(value);
         return selectionStart;
       },
       enumerable: true
     });
-    Object.defineProperty(me, 'selectionEnd', {
+    Object.defineProperty(this, 'selectionEnd', {
       get: function() {
         return selectionEnd;
       },
@@ -93,185 +91,183 @@ function HexedScroller(container, file) {
       },
       enumerable: true
     });
-  })(this);
-  this.cursor = 0;
-}
-
-HexedScroller.prototype = Object.create(Scroller.prototype);
-
-// We need to override a few specific items.
-
-HexedScroller.prototype.createLineContent = function(line) {
-  // Set the CSS class name
-  line.className = 'line';
-  // Each line has three parts - the gutter, the hex data about the line, and
-  // finally the decoded text about the line.
-  var gutter = document.createElement('span');
-  var data = document.createElement('span');
-  var decoded = document.createElement('span');
-  gutter.className = 'gutter';
-  gutter.innerHTML = '0';
-  data.className = 'data';
-  data.innerHTML = '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00';
-  decoded.className = 'decoded';
-  decoded.innerHTML = '0000000000000000';
-  line.appendChild(gutter);
-  line.appendChild(data);
-  line.appendChild(decoded);
-  line._gutter = gutter;
-  line._data = data;
-  line._decoded = decoded;
-  // If we don't have the widths calculated yet, we need to figure out what they
-  // should be.
-  if (!this._widthsCalculated) {
-    this._widthsCalculated = true;
-    var temp = document.createElement('div');
-    temp.className = 'hex-file';
-    temp.style.position = 'absolute';
-    document.body.appendChild(temp);
-    temp.appendChild(line);
-    // Calculate the width of the largest offset.
-    gutter.innerHTML = Math.floor(this.file.size / 16).toString(16) + '0';
-    this._gutterWidth = window.getComputedStyle(gutter).width;
-    this._dataWidth = window.getComputedStyle(data).width;
-    temp.removeChild(line);
-    document.body.removeChild(temp);
+    this.cursor = 0;
   }
-  gutter.style.width = this._gutterWidth;
-  data.style.width = this._dataWidth;
-};
 
-HexedScroller.prototype.setLineContent = function(line, lineNumber) {
-  var offset = lineNumber * 16;
-  if (offset > this.file.size) {
-    // Nothing here.
-    line.className = 'line empty';
-    line._gutter.innerHTML = '\u00A0';
-    line._data.innerHTML = '\u00A0';
-    line._decoded.innerHTML = '\u00A0';
-    return true;
-  } else {
-    line._gutter.innerHTML = offset.toString(16).toUpperCase();
-    // See if we can grab the line right now.
-    var data = this.file.readCached(offset, 16);
-    if (data == null) {
-      // We have no data, so just show that.
-      line.className = 'line loading';
-      line._data.innerHTML = '?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??';
-      line._decoded.innerHTML = '????????????????';
-      return false;
+  // We need to override a few specific items.
+  createLineContent(line) {
+    // Set the CSS class name
+    line.className = 'line';
+    // Each line has three parts - the gutter, the hex data about the line, and
+    // finally the decoded text about the line.
+    var gutter = document.createElement('span');
+    var data = document.createElement('span');
+    var decoded = document.createElement('span');
+    gutter.className = 'gutter';
+    gutter.innerHTML = '0';
+    data.className = 'data';
+    data.innerHTML = '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00';
+    decoded.className = 'decoded';
+    decoded.innerHTML = '0000000000000000';
+    line.appendChild(gutter);
+    line.appendChild(data);
+    line.appendChild(decoded);
+    line._gutter = gutter;
+    line._data = data;
+    line._decoded = decoded;
+    // If we don't have the widths calculated yet, we need to figure out what they
+    // should be.
+    if (!this._widthsCalculated) {
+      this._widthsCalculated = true;
+      var temp = document.createElement('div');
+      temp.className = 'hex-file';
+      temp.style.position = 'absolute';
+      document.body.appendChild(temp);
+      temp.appendChild(line);
+      // Calculate the width of the largest offset.
+      gutter.innerHTML = Math.floor(this.file.size / 16).toString(16) + '0';
+      this._gutterWidth = window.getComputedStyle(gutter).width;
+      this._dataWidth = window.getComputedStyle(data).width;
+      temp.removeChild(line);
+      document.body.removeChild(temp);
+    }
+    gutter.style.width = this._gutterWidth;
+    data.style.width = this._dataWidth;
+  }
+
+  setLineContent(line, lineNumber) {
+    let offset = lineNumber * 16;
+    if (offset > this.file.size) {
+      // Nothing here.
+      line.className = 'line empty';
+      line._gutter.innerHTML = '\u00A0';
+      line._data.innerHTML = '\u00A0';
+      line._decoded.innerHTML = '\u00A0';
+      return true;
     } else {
-      var cursor = this.cursor;
-      line.className = 'line';
-      // bytes should be a slice of a buffer
-      var hex = new Array(data.length), decoded = new Array(data.length);
-      for (var i = 0; i < data.length; i++) {
-        // Not clear if byte is signed or not, so make it unsigned
-        var byte = data[i] & 0xFF,
-          h = byte.toString(16).toUpperCase();
-        if (h.length < 2)
-          h = "0" + h;
-        hex[i] = h;
-        decoded[i] = convertByte(byte);
-        if (decoded[i] in htmlEscapes) {
-          decoded[i] = htmlEscapes[decoded[i]];
-        }
-        // Check to see if the cursor is here
-        if (offset + i == cursor) {
-          hex[i] = '<span class="cursor">' + h + '</span>';
-          decoded[i] = '<span class="cursor">' + decoded[i] + '</span>';
-        }
-      }
-      line._data.innerHTML = hex.join(' ');
-      line._decoded.innerHTML = decoded.join('');
-      return true;
-    }
-  }
-};
-
-HexedScroller.prototype.loadLines = function(firstLine, visibleLines) {
-  // Trigger a load
-  this.file.ensureCached(firstLine * 16, visibleLines * 16, (function(me) {
-    return function(err, buffer) {
-      if (err) {
-        // TODO: Display something.
-        console.log(err);
-      } else {
-        // Don't care about the actual data, we just want to display our
-        // currently visible lines.
-        me.resetLineContents();
-      }
-    }
-  })(this));
-}
-
-HexedScroller.prototype.onkeydown = function(event) {
-  if (event.altKey || event.ctrlKey) {
-    return;
-  }
-  if (event.metaKey) {
-    if (useOSXShortcuts) {
-      // In this case, the various arrow keys change meaning.
-      switch (event.keyIdentifier) {
-      case 'Left':
-        this.cursor -= this.cursor % this.bytesPerLine;
-        break;
-      case 'Right':
-        this.cursor = this.cursor + (this.bytesPerLine - (this.cursor % this.bytesPerLine) - 1);
-        break;
-      case 'Up':
-        this.cursor = 0;
-        break;
-      case 'Down':
-        // Note: currently this will actually be this.file.size-1, but when
-        // editing is supported, this will move it to a byte past the last one
-        this.cursor = this.file.size;
-        break;
-      default:
+      line._gutter.innerHTML = offset.toString(16).toUpperCase();
+      // See if we can grab the line right now.
+      var data = this.file.readCached(offset, 16);
+      if (data == null) {
+        // FIXME: The cursor can be in unloaded data. I really don't like how the
+        // cursor is currently implemented.
+        // We have no data, so just show that.
+        line.className = 'line loading';
+        line._data.innerHTML = '?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??';
+        line._decoded.innerHTML = '????????????????';
         return false;
+      } else {
+        var cursor = this.cursor;
+        line.className = 'line';
+        // bytes should be a slice of a buffer
+        var hex = new Array(data.length), decoded = new Array(data.length);
+        for (var i = 0; i < data.length; i++) {
+          // Not clear if byte is signed or not, so make it unsigned
+          var byte = data[i] & 0xFF,
+            h = byte.toString(16).toUpperCase();
+          if (h.length < 2)
+            h = "0" + h;
+          hex[i] = h;
+          decoded[i] = convertByte(byte);
+          if (decoded[i] in htmlEscapes) {
+            decoded[i] = htmlEscapes[decoded[i]];
+          }
+          // Check to see if the cursor is here
+          if (offset + i == cursor) {
+            hex[i] = '<span class="cursor">' + h + '</span>';
+            decoded[i] = '<span class="cursor">' + decoded[i] + '</span>';
+          }
+        }
+        line._data.innerHTML = hex.join(' ');
+        line._decoded.innerHTML = decoded.join('');
+        return true;
       }
-      event.preventDefault();
-      return true;
     }
   }
-  switch (event.keyIdentifier) {
-  case 'Left':
-    this.cursor--;
-    break;
-  case 'Right':
-    this.cursor++;
-    break;
-  case 'Up':
-    this.cursor -= this.bytesPerLine;
-    break;
-  case 'Down':
-    this.cursor += this.bytesPerLine;
-    break;
-  case 'PageUp':
-    this.cursor -= this.bytesPerLine * this.getLinesPerPage();
-    break;
-  case 'PageDown':
-    this.cursor += this.bytesPerLine * this.getLinesPerPage();
-    break;
-  default:
-    return false;
-  }
-  event.preventDefault();
-  return true;
-};
 
-// Helper function
-HexedScroller.prototype._clampOffset = function(offset) {
-  // Ignore NaN or anything that isn't a number.
-  if (typeof offset != 'number' || isNaN(offset))
-    return null;
-  offset = Math.floor(offset);
-  if (offset < 0)
-    return 0;
-  if (offset > this.file.size)
-    return offset.file.size;
-  return offset;
-};
+  loadLines(firstLine, visibleLines) {
+    // Trigger a load
+    this.file.ensureCached(firstLine * 16, visibleLines * 16,
+      (err, buffer) => {
+        if (err) {
+          // TODO: Display something.
+          console.log(err);
+        } else {
+          // Don't care about the actual data, we just want to display our
+          // currently visible lines.
+          this.resetLineContents();
+        }
+      });
+  }
+
+  onkeydown(event) {
+    if (event.altKey || event.ctrlKey) {
+      return;
+    }
+    if (event.metaKey) {
+      if (useOSXShortcuts) {
+        // In this case, the various arrow keys change meaning.
+        switch (event.keyIdentifier) {
+        case 'Left':
+          this.cursor -= this.cursor % this.bytesPerLine;
+          break;
+        case 'Right':
+          this.cursor = this.cursor + (this.bytesPerLine - (this.cursor % this.bytesPerLine) - 1);
+          break;
+        case 'Up':
+          this.cursor = 0;
+          break;
+        case 'Down':
+          // Note: currently this will actually be this.file.size-1, but when
+          // editing is supported, this will move it to a byte past the last one
+          this.cursor = this.file.size;
+          break;
+        default:
+          return false;
+        }
+        event.preventDefault();
+        return true;
+      }
+    }
+    switch (event.keyIdentifier) {
+    case 'Left':
+      this.cursor--;
+      break;
+    case 'Right':
+      this.cursor++;
+      break;
+    case 'Up':
+      this.cursor -= this.bytesPerLine;
+      break;
+    case 'Down':
+      this.cursor += this.bytesPerLine;
+      break;
+    case 'PageUp':
+      this.cursor -= this.bytesPerLine * this.getLinesPerPage();
+      break;
+    case 'PageDown':
+      this.cursor += this.bytesPerLine * this.getLinesPerPage();
+      break;
+    default:
+      return false;
+    }
+    event.preventDefault();
+    return true;
+  }
+
+  // Helper function
+  _clampOffset(offset) {
+    // Ignore NaN or anything that isn't a number.
+    if (typeof offset != 'number' || isNaN(offset))
+      return null;
+    offset = Math.floor(offset);
+    if (offset < 0)
+      return 0;
+    if (offset > this.file.size)
+      return offset.file.size;
+    return offset;
+  }
+}
 
 function FilePane(pane, file, workspace) {
   this.pane = pane;

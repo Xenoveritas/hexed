@@ -5,39 +5,38 @@
  * functionality.
  */
 
-var Scroller = require('./scroller'),
+const Scroller = require('./scroller'),
   strings = require('./strings');
 
 /**
  * Scroller for showing the strings.
  */
-function StringsScroller(container) {
-  // Initialize our variables BEFORE calling the super constructor
-  this._offsets = [];
-  this._strings = [];
-  Scroller.call(this, container);
-  container.style.position = 'absolute';
-  this.setTotalLines(0);
-}
+class StringsScroller extends Scroller {
+  constructor(container) {
+    super(container);
+    this._offsets = [];
+    this._strings = [];
+    container.style.position = 'absolute';
+    this.setTotalLines(0);
+  }
 
-StringsScroller.prototype = Object.create(Scroller.prototype);
+  createLineContent(line) {
+    line.className = 'line';
+    line.innerHTML = '\u00A0';
+  }
 
-StringsScroller.prototype.createLineContent = function(line) {
-  line.className = 'line';
-  line.innerHTML = '\u00A0';
-};
+  setLineContent(line, lineNumber) {
+    line.innerText = lineNumber < this._strings.length ?
+      '0x' + this._offsets[lineNumber].toString(16).toUpperCase() + ': ' + this._strings[lineNumber] :
+      '\u00A0';
+    return true;
+  }
 
-StringsScroller.prototype.setLineContent = function(line, lineNumber) {
-  line.innerText = lineNumber < this._strings.length ?
-    '0x' + this._offsets[lineNumber].toString(16).toUpperCase() + ': ' + this._strings[lineNumber] :
-    '\u00A0';
-  return true;
-};
-
-StringsScroller.prototype._addString = function(offset, str) {
-  this._offsets.push(offset);
-  this._strings.push(str);
-  this.setTotalLines(this._strings.length);
+  _addString(offset, str) {
+    this._offsets.push(offset);
+    this._strings.push(str);
+    this.setTotalLines(this._strings.length);
+  }
 }
 
 function StringsPane(pane, file) {
