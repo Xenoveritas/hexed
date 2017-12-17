@@ -5,52 +5,62 @@
  *
  * It is up to the container to properly style the scrollbar.
  */
+"use strict";
 
-function Scrollbar(container) {
-  this._scrollArea = document.createElement('div');
-  this._scrollArea.className = 'scrollbar';
-  container.appendChild(this._scrollArea);
-  this._scrollBar = document.createElement('div');
-  this._scrollBar.className = 'bar';
-  this._scrollBar.style.position = 'relative';
-  this._scrollArea.appendChild(this._scrollBar);
-  this.update();
-}
+class Scrollbar {
+  constructor(container) {
+    this._position = 0;
+    this._total = 0;
+    this._visibleArea = 100;
+    this._scrollArea = document.createElement('div');
+    this._scrollArea.className = 'scrollbar';
+    container.appendChild(this._scrollArea);
+    this._scrollBar = document.createElement('div');
+    this._scrollBar.className = 'bar';
+    this._scrollBar.style.position = 'relative';
+    this._scrollArea.appendChild(this._scrollBar);
+    this.update();
+  }
 
-Scrollbar.prototype = {
-  position: 0,
-  total: 0,
+  get position() {
+    return this._position;
+  }
+
+  set position(value) {
+    this._position = value;
+    this.update();
+  }
+
+  get total() {
+    return this._total;
+  }
+
+  set total(value) {
+    this._total = value;
+    this.update();
+  }
+
+  get visibleArea() {
+    return this._visibleArea;
+  }
+
+  set visibleArea(value) {
+    this._visibleArea = value;
+    this.update();
+  }
+
   /**
-   * Number of elements currently visible.
+   * Forces the scroll bar to update its visible representation.
    */
-  visibleArea: 1,
-  getPosition: function() {
-    return this.position;
-  },
-  setPosition: function(position) {
-    this.position = position;
-    this.update();
-  },
-  setTotal: function(total) {
-    this.total = total;
-    this.update();
-  },
-  setVisibleArea: function(visibleArea) {
-    this.visibleArea = visibleArea;
-    this.update();
-  },
-  /**
-   * Forces the scroll bar to update its visible position.
-   */
-  update: function() {
-    if (this.total == 0 || this.total < this.visibleArea) {
+  update() {
+    if (this._total == 0 || this._total < this._visibleArea) {
       // No scroll bar visible (either no document size or the entire document
       // is visible).
       this._scrollBar.style.display = 'none';
     } else {
       this._scrollBar.style.display = 'block';
-      var barHeight = Math.max(10, (this.visibleArea / this.total) * this._scrollArea.offsetHeight);
-      this._scrollBar.style.top = (this.position / (this.total - this.visibleArea)) * (this._scrollArea.offsetHeight - barHeight) + 'px';
+      let barHeight = Math.max(10, (this._visibleArea / this._total) * this._scrollArea.offsetHeight);
+      this._scrollBar.style.top = (this._position / (this._total - this._visibleArea)) * (this._scrollArea.offsetHeight - barHeight) + 'px';
       this._scrollBar.style.height = barHeight + 'px';
       //console.log("Visible: " + this.visibleArea + "; Total: " + this.total + " visible / total: " + this.visibleArea / this.total + "; height: " + this._scrollArea.offsetHeight);
     }

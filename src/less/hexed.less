@@ -184,8 +184,16 @@ ul.tabs {
   text-align: right;
 }
 
-.scrollbar .bar {
-  background: #666;
-  border-radius: 4px;
-  width: 8px;
+@scrollbarWidth: 8px;
+
+.scrollbar {
+  position: absolute;
+  right: 0;
+  width: @scrollbarWidth;
+  height: 100%;
+  .bar {
+    background: #666;
+    border-radius: @scrollbarWidth / 2;
+    width: @scrollbarWidth;
+  }
 }

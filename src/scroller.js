@@ -2,28 +2,37 @@
  * @module
  * System for dealing with a view that reuses DOM elements to scroll content.
  */
+"use strict";
 
 // Internal flag indicating if we should use OS X keyboard shortcuts
 // (specifically Command-Up and Command-Down for Home and End).
-const USE_OSX_SHORTCUTS = process.platform === 'darwin'
+const USE_OSX_SHORTCUTS = process.platform === 'darwin';
+const Scrollbar = require('./scrollbar');
 
 /**
- * @constructor
- * Create a new Scroller that scrolls contents in the given DOM element. The
- * default implementation isn't that useful, you should override the
+ * A Scroller that scrolls contents in the given DOM element. The default
+ * implementation isn't that useful, you should override the
  * {@link #createLineContent} and {@link #setLineContent} methods to generate
  * useful content.
  */
 class Scroller {
+  /**
+   * Create a new Scroller within the given container.
+   */
   constructor(container) {
     /**
      * The containing element as defined on creation.
      */
     this.container = container;
     // Set up some CSS
+    this.container.className += ' scroller';
     this.container.style.position = 'relative';
     this.container.style.overflowY = 'visible';
     this.container.setAttribute('tabindex', '0');
+    // Add a container to hold the various lines.
+    this._lineContainer = document.createElement('div');
+    this.container.appendChild(this._lineContainer);
+    this._scrollBar = new Scrollbar(this.container);
 
     /**
      * The height of a single line. All lines must be the same height. By default
@@ -171,6 +180,7 @@ class Scroller {
       this.onresize();
     }
   }
+
   /**
    * Gets the DOM object for a given line, assuming it's currently visible. If
    * it isn't, this returns <code>null</code>.
@@ -184,6 +194,7 @@ class Scroller {
       return null;
     return this._lines[lineNumber - firstLine];
   }
+
   /**
    * Update a single line. Basically this is just
    * <code>setLineContent(getLine(lineNumber), lineNumber)</code> with checks to
@@ -194,6 +205,7 @@ class Scroller {
     if (line != null)
       this.setLineContent(line, lineNumber);
   }
+
   /**
    * Update mutliple lines.
    */
@@ -270,7 +282,7 @@ class Scroller {
     }
     // Clamp y. Note that it's possible for our maximum height to be negative if
     // the document doesn't fit, so limit by the height first...
-    var height = this.container.offsetHeight,
+    let height = this.container.offsetHeight,
       maxHeight = this.documentHeight - height;
     if (y > maxHeight)
       y = maxHeight;
@@ -279,16 +291,17 @@ class Scroller {
       y = 0;
     this._verticalOffset = y;
     // Now that we know where we are, figure out what we need to do.
-    var offset = this._verticalOffset % this.lineHeight;
-    this.container.style.WebkitTransform = 'translateY(' + (-offset) + 'px)';
+    let offset = this._verticalOffset % this.lineHeight;
+    this._lineContainer.style.WebkitTransform = 'translateY(' + (-offset) + 'px)';
     // TODO: We may be able to reuse lines more effectively but I'm lazy so just
     // redo all the content.
-    var firstLine = this.getFirstLine();
+    let firstLine = this.getFirstLine();
     if (firstLine != this._lastFirstLine) {
       // We've actually moved, so redo the content.
       this._populateLines(firstLine, this.getVisibleLines(), false);
       this._lastFirstLine = firstLine;
     }
+    this._scrollBar.position = y;
     // And inform
     this.onscrolled(y, firstLine, height, firstLine + this.getVisibleLines());
   }
@@ -317,10 +330,10 @@ class Scroller {
    * Internal method that creates a line and inserts it into the DOM.
    */
   _createLine() {
-    var line = this.createLine();
+    let line = this.createLine();
     line.style.position = 'absolute';
     this._lines.push(line);
-    this.container.appendChild(line);
+    this._lineContainer.appendChild(line);
   }
   /**
    * Generate a new DOM object for a line. The default method creates a &lt;div&gt;
@@ -393,10 +406,10 @@ class Scroller {
       this.documentHeight = this.lineHeight * this.totalLines;
     }
     // See if we need to generate lines.
-    var neededLines = this.getVisibleLines();
+    let neededLines = this.getVisibleLines();
     if (this._lines.length < neededLines) {
       // Create the missing lines
-      for (var i = neededLines - this._lines.length; i > 0; i--) {
+      for (let i = neededLines - this._lines.length; i > 0; i--) {
         this._createLine();
       }
     }
@@ -431,8 +444,8 @@ class Scroller {
     // First figure out what our virtual first line is
     var firstLine = Math.floor(this._verticalOffset / this.lineHeight);
     // Now layout out each line.
-    for (var i = 0; i < visibleLines; i++) {
-      var l = this._lines[i];
+    for (let i = 0; i < visibleLines; i++) {
+      let l = this._lines[i];
       l.style.top = (i * this.lineHeight) + 'px';
     }
     // Populate lines, loading immediately rather than delaying for scrolling.
@@ -440,6 +453,9 @@ class Scroller {
     // new content is visible rather than waiting to see if the user skips past
     // it.
     this._populateLines(firstLine, visibleLines, true);
+    // Also update our scrollbar.
+    this._scrollBar.visibleArea = this.container.offsetHeight;
+    this._scrollBar.total = this.lineHeight * this.totalLines;
   }
   /**
    * Populates lines. This deals with checking if the lines are all loaded.
