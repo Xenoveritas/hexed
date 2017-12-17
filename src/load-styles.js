@@ -1,4 +1,4 @@
-var less = require('less'),
+const less = require('less'),
   fs = require('fs'),
   path = require('path'),
   debuglog = require('./debuglog').debuglog('load-styles');
@@ -12,7 +12,7 @@ function loadSheet(filename, callback) {
     callback = function() { };
   }
   debuglog("read %s", filename);
-  fs.readFile(filename, { encoding: 'utf8' }, function(err, src) {
+  fs.readFile(filename, { encoding: 'utf8' }, (err, src) => {
     if (err) {
       debuglog("error reading %s: %j", filename, err);
       return callback(err);

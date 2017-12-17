@@ -15,8 +15,8 @@ document.body.className = 'platform-' + process.platform.replace(/\s/, '-');
 
 // Add drag and drop handlers so you can drop a file on the window and it will
 // open in it
-var contents = document.body;
-contents.addEventListener('dragenter', function(event) {
+let contents = document.body;
+contents.addEventListener('dragenter', (event) => {
   // Check to see if the event is a file
   if (event.dataTransfer.files.length == 1) {
     event.dataTransfer.effectAllowed = 'move';
@@ -24,12 +24,12 @@ contents.addEventListener('dragenter', function(event) {
     event.dataTransfer.effectAllowed = 'none';
   }
 }, false);
-contents.addEventListener('dragover', function(event) {
+contents.addEventListener('dragover', (event) => {
   event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
   return false;
 });
-contents.addEventListener('drop', function(event) {
+contents.addEventListener('drop', (event) => {
   if (event.dataTransfer.files.length > 0) {
     // We actually want to notify our parent controller of this drop
     var files = [];
@@ -42,9 +42,9 @@ contents.addEventListener('drop', function(event) {
 
 // Build our core UI.
 
-var Workspace = require('./workspace').Workspace;
+const Workspace = require('./workspace').Workspace;
 
-var workspace = new Workspace();
+let workspace = new Workspace();
 
 // Set up IPC.
 ipcRenderer.on('set-id', (event, id) => {
