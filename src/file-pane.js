@@ -4,10 +4,10 @@
  * every single line of bytes would - well, not work.
  */
 
-var bootbox = require('bootbox'),
+const bootbox = require('bootbox'),
   Scroller = require('./scroller'),
   StringsPane = require('./strings-pane'),
-  useOSXShortcuts = process.platform == 'darwin',
+  USE_OSX_SHORTCUTS = process.platform === 'darwin',
   htmlEscapes = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
 
 /**
@@ -205,19 +205,19 @@ class HexedScroller extends Scroller {
       return;
     }
     if (event.metaKey) {
-      if (useOSXShortcuts) {
+      if (USE_OSX_SHORTCUTS) {
         // In this case, the various arrow keys change meaning.
-        switch (event.keyIdentifier) {
-        case 'Left':
+        switch (event.key) {
+        case 'ArrowLeft':
           this.cursor -= this.cursor % this.bytesPerLine;
           break;
-        case 'Right':
+        case 'ArrowRight':
           this.cursor = this.cursor + (this.bytesPerLine - (this.cursor % this.bytesPerLine) - 1);
           break;
-        case 'Up':
+        case 'ArrowUp':
           this.cursor = 0;
           break;
-        case 'Down':
+        case 'ArrowDown':
           // Note: currently this will actually be this.file.size-1, but when
           // editing is supported, this will move it to a byte past the last one
           this.cursor = this.file.size;
@@ -229,17 +229,17 @@ class HexedScroller extends Scroller {
         return true;
       }
     }
-    switch (event.keyIdentifier) {
-    case 'Left':
+    switch (event.key) {
+    case 'ArrowLeft':
       this.cursor--;
       break;
-    case 'Right':
+    case 'ArrowRight':
       this.cursor++;
       break;
-    case 'Up':
+    case 'ArrowUp':
       this.cursor -= this.bytesPerLine;
       break;
-    case 'Down':
+    case 'ArrowDown':
       this.cursor += this.bytesPerLine;
       break;
     case 'PageUp':
@@ -353,10 +353,7 @@ FilePane.prototype = {
    * This is likely going to be moved up a level.
    */
   showJumpTo: function() {
-    var me = this;
-    bootbox.prompt("Jump to address", function(result) {
-      me.jumpTo(result);
-    });
+    bootbox.prompt("Jump to address", (result) => this.jumpTo(result));
   },
   showStrings: function() {
     if (!this._stringsPane) {

@@ -5,7 +5,7 @@
 
 // Internal flag indicating if we should use OS X keyboard shortcuts
 // (specifically Command-Up and Command-Down for Home and End).
-var useOSXShortcuts = process.platform == 'darwin'
+const USE_OSX_SHORTCUTS = process.platform === 'darwin'
 
 /**
  * @constructor
@@ -96,7 +96,7 @@ class Scroller {
       if (event.altKey || event.ctrlKey || event.shiftKey)
         return;
       if (event.metaKey) {
-        if (useOSXShortcuts) {
+        if (USE_OSX_SHORTCUTS) {
           // We have two meta key combinations we allow in this case:
           if (event.key == 'ArrowUp') {
             this.scrollTo(0);
@@ -111,14 +111,14 @@ class Scroller {
       console.log(event);
       switch (event.key) {
         case 'ArrowUp':
-          if (event.metaKey && useOSXShortcuts) {
+          if (event.metaKey && USE_OSX_SHORTCUTS) {
             this.scrollTo(0);
           } else {
             this.scrollByLines(-1);
           }
           break;
         case 'ArrowDown':
-          if (event.metaKey && useOSXShortcuts) {
+          if (event.metaKey && USE_OSX_SHORTCUTS) {
             this.scrollTo(this.documentHeight);
           } else {
             this.scrollByLines(1);
