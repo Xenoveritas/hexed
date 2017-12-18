@@ -4,6 +4,8 @@
  */
 "use strict";
 
+import "./less/hexed.less";
+
 const {ipcRenderer} = require('electron');
 const path = require('path');
 

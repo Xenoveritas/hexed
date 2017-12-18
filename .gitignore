@@ -1,8 +1,12 @@
-# Ignore anything Bower has installed
-/bower_components/
-
 # Ignore node modules
 /node_modules/
 
 # Ignore random OS crap
 .DS_Store
+
+# Ignore map files
+*.map
+
+# Ignore webpack generated files
+/app/main.js
+/app/html-main.js

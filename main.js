@@ -8,7 +8,7 @@
 "use strict";
 
 const {app, BrowserWindow, Menu} = require('electron');
-const HexedWindow = require('./lib/hex-window');
+const HexedWindow = require('./src/background/hex-window');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the javascript object is GCed.
@@ -52,7 +52,7 @@ function openNewWindow(files) {
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   // Build our menu
-  let menu = require('./lib/hex-menu').createMenu();
+  let menu = require('./src/background/hex-menu').createMenu();
   Menu.setApplicationMenu(menu);
 
   var files = [];
