@@ -34,45 +34,18 @@ class Workspace {
   /**
    * Opens a givne file.
    */
-  openFile(filename, callback) {
-    // TODO: If the file is already open, bring that to the front.
-    // Callback isn't required, if it isn't given, make it a no-op.
-    if (!callback) {
-      callback = function() { };
-    }
-    hexfile.open(filename, (err, file) => {
-      if (err) {
-        debuglog("Error opening file: " + err);
-      } else {
-        // Create the pane for this file
-        callback(null, this._createFilePane(file));
-      }
+  openFile(filename) {
+    return hexfile.open(filename).then((file) => {
+      return this._createFilePane(file);
     });
   }
   /**
-   * Open multiple files at once. The callback will be called once all files
-   * have either opened or failed to open.
+   * Open multiple files at once. Returns an array of Promises generated from
+   * calling {@link #openFile} on each file. Promise.all or Promise.race can
+   * be used on the return result to wait for them to complete.
    */
-  openFiles(filenames, callback) {
-    var left = filenames.length, errs = null, panes = [],
-      cb = (err, pane) => {
-        if (err) {
-          if (errs = null) {
-            errs = [ err ];
-          } else {
-            errs.push(err);
-          }
-        } else {
-          panes.push(pane);
-        }
-        left--;
-        if (left <= 0) {
-          if (callback) {
-            callback(errs, panes);
-          }
-        }
-      };
-    filenames.forEach(filename => this.openFile(filename, cb));
+  openFiles(filenames) {
+    return filenames.map(filename => this.openFile(filename));
   }
   _createFilePane(file) {
     var pane = this.createPane();
