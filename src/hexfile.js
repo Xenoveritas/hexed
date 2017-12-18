@@ -86,11 +86,12 @@ class Block {
  */
 class HexFile extends EventEmitter {
   /**
-   * Create a new file. The file is created immediately, but the various file
-   * stats are delayed. When the file is completely populated, callback will be
-   * invoked.
+   * Create a new file. The file isn't necessarily "ready" when returned, as
+   * the stats still need to be loaded. Use {@link module:hexfile#open()} to
+   * get a Promise that resolves when the file is ready, or use {@link #init()}
+   * to get a promise that resolves when it is ready.
    */
-  constructor(filename, fd, callback) {
+  constructor(filename, fd) {
     super();
     // Immutable properties:
     /**
@@ -119,19 +120,34 @@ class HexFile extends EventEmitter {
     this._maxReadLength = 128 * BLOCK_SIZE;
     this.maxBlock = 0;
     // And now grab the stats (such as file size)
-    fs.fstat(fd, (err, stats) => {
-      if (err) {
-        callback(err);
-      }
-      this.stats = stats;
-      this.size = stats.size;
-      this.maxBlock = Math.ceil(this.size / BLOCK_SIZE);
-      callback(null, this);
+    this._initPromise = new Promise((resolve, reject) => {
+      fs.fstat(fd, (err, stats) => {
+        if (err) {
+          reject(err);
+        } else {
+          this.stats = stats;
+          this.size = stats.size;
+          this.maxBlock = Math.ceil(this.size / BLOCK_SIZE);
+          resolve(this);
+        }
+      });
     });
   }
 
-  close(callback) {
-    fs.close(this.fd, callback);
+  init() {
+    return this._initPromise;
+  }
+
+  close() {
+    return new Promise((resolve, reject) => {
+      fs.close(this.fd, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this);
+        }
+      });
+    });
   }
 
   /**
