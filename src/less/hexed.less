@@ -18,6 +18,11 @@ html, body {
   height: 100%;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+}
+
 // Windows-specific styles
 @import url(hexed.win32.less);
 
@@ -27,12 +32,15 @@ html, body {
 // Custom tags used to lay stuff out
 hexed-workspace {
   display: block;
-  height: 100%;
   overflow: hidden;
   position: relative;
-  .horizontal, .vertical {
-    position: relative;
-  }
+  flex-grow: 1;
+}
+
+hexed-pane {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 hexed-workspace-axis {
@@ -62,60 +70,11 @@ hexed-panel-container {
   }
 }
 
-ul.tabs {
-  display: flex;
-  margin: 0;
-  padding: 0;
-  background-color: @hexedTabBackground;
-  color: @hexedTabColor;
-  border-bottom: solid 1px #000;
-  li {
-    cursor: default;
-    display: inline-block;
-    margin: 0 -1px -1px 0;
-    padding: 4px 1em;
-    border: solid 1px @hexedTabColor;
-    white-space: nowrap;
-    // FIXME: This hides the close button in some cases.
-    overflow: hidden;
-    a {
-      display: inline-block;
-      cursor: default;
-      &.title {
-        &, &:hover {
-          text-decoration: none;
-          color: @hexedTabColor;
-        }
-        // Should we set a max width?
-      }
-      &.close {
-        cursor: default;
-        float: none;
-        text-shadow: none;
-        margin-left: 0.5em;
-        width: 14pt;
-        height: 14pt;
-        font-size: 7pt;
-        line-height: 14pt;
-        vertical-align: middle;
-        border-radius: 7pt;
-        text-align: center;
-        &:hover {
-          background-color: mix(@hexedActiveTabBackground, @hexedActiveTabColor);
-        }
-      }
-    }
-    &.active {
-      background-color: @hexedActiveTabBackground;
-      color: @hexedActiveTabColor;
-      border-bottom: none;
-      padding-bottom: 5px;
-      a.close {
-        background-color: mix(@hexedActiveTabBackground, @hexedActiveTabColor);
-      }
-    }
-  }
+.hex-file.scroller {
+  width: 100%;
+  height: 100%;
 }
+
 .panes {
   flex-direction: column;
   .placeholder {
@@ -204,4 +163,13 @@ ul.tabs {
     border-radius: @scrollbarWidth / 2;
     width: @scrollbarWidth;
   }
+}
+
+footer {
+  border-top: #EEE;
+  background-color: #CCC;
+  white-space: pre;
+  text-overflow: ellipsis;
+  padding: 2px 6px;
+  font-size: 80%;
 }

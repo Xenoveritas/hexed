@@ -377,13 +377,15 @@ class HexFile extends EventEmitter {
   }
 }
 
-exports.open = function(filename, callback) {
-  fs.open(filename, 'r', function(err, fd) {
-    if (err) {
-      callback(err);
-    } else {
-      new HexFile(filename, fd, callback);
-    }
+exports.open = function(filename) {
+  return new Promise((resolve, reject) => {
+    fs.open(filename, 'r', (err, fd) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(new HexFile(filename, fd));
+      }
+    })
   });
 }
 exports.HexFile = HexFile;

@@ -5,10 +5,13 @@
  */
 
 const bootbox = require('bootbox'),
-  Scroller = require('./scroller'),
-  StringsPane = require('./strings-pane'),
+  Scroller = require('../scroller'),
+  StringsPane = require('../strings-pane'),
   USE_OSX_SHORTCUTS = process.platform === 'darwin',
   htmlEscapes = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
+
+import {Pane} from '../workspace.js';
+import hexfile from '../hexfile.js';
 
 /**
  * Internal function for converting a byte to a human-readable character for
@@ -293,57 +296,69 @@ class HexedScroller extends Scroller {
   }
 }
 
-function FilePane(pane, file, workspace) {
-  this.pane = pane;
-  pane.title = file.filename;
-  this.workspace = workspace;
-  // Generate our UI.
-  this._container = document.createElement('div');
-  this._container.className = 'hex-file';
-  pane.contents.appendChild(this._container);
-  pane.on('menu', (function(me) { return function(command) {
-    me.doMenuCommand(command);
-  }; })(this));
-  this._scroller = new HexedScroller(this._container, file);
-  pane.on('should-focus', (function(element) {
-    return function() { element.focus(); };
-  })(this._container));
-  pane.on('focus', (function(scroller) {
-    return function() { scroller.onresize(); };
-  })(this._scroller));
-  pane.on('closed', (function(me) {
-    return function() {
-      // Cleanup function
-      me._scroller.destroy();
-      me.file.close();
-    };
-  })(this));
-  if (pane.active) {
-    // Focus immediately
-    this._container.focus();
+export class FilePane extends Pane {
+  constructor(filename) {
+    super();
+    this.title = 'Opening...';
+    this.filename = filename;
+    this._openPromise = hexfile.open(filename).then((file) => {
+      this.file = file;
+      this._init();
+    }, (error) => {
+      this.contents.innerHTML = '<p class="error"></p>';
+      this.contents.childNodes[0].append(error);
+    });
+    this.contents.innerHTML = '<p class="loading">Loading...</p>';
   }
-  this.file = file;
-  // Various properties that delegate to the scroller
-  (function(me, scroller) {
-    Object.defineProperty(me, 'cursor', {
-      get: function() { return scroller.cursor; },
-      set: function(value) { return scroller.cursor = value; }
-    });
-    Object.defineProperty(me, 'selectionStart', {
-      get: function() { return scroller.selectionStart; },
-      set: function(value) { return scroller.selectionStart = value; }
-    });
-    Object.defineProperty(me, 'selectionEnd', {
-      get: function() { return scroller.selectionEnd; },
-      set: function(value) { return scroller.selectionEnd = value; }
-    });
-  })(this, this._scroller);
-  // Keyboard support
-  this._container.setAttribute('tabindex', '0');
-}
 
-FilePane.prototype = {
-  doMenuCommand: function(command) {
+  _init() {
+    this.title = this.file.filename;
+    // Generate our UI.
+    this._container = document.createElement('div');
+    this._container.className = 'hex-file';
+    this.contents.innerHTML = '';
+    this.contents.appendChild(this._container);
+    this.on('menu', command => this.doMenuCommand(command) );
+    this._scroller = new HexedScroller(this._container, this.file);
+    this.on('should-focus', () => this._container.focus());
+    this.on('focus', () => this._scroller.onresize());
+    this.on('closed', () => {
+        // Cleanup function
+        this._scroller.destroy();
+        this.file.close();
+      });
+    if (this.active) {
+      // Focus immediately
+      this._container.focus();
+    }
+    // Various properties that delegate to the scroller
+    (function(me, scroller) {
+      Object.defineProperty(me, 'cursor', {
+        get: function() { return scroller.cursor; },
+        set: function(value) { return scroller.cursor = value; }
+      });
+      Object.defineProperty(me, 'selectionStart', {
+        get: function() { return scroller.selectionStart; },
+        set: function(value) { return scroller.selectionStart = value; }
+      });
+      Object.defineProperty(me, 'selectionEnd', {
+        get: function() { return scroller.selectionEnd; },
+        set: function(value) { return scroller.selectionEnd = value; }
+      });
+    })(this, this._scroller);
+    // Keyboard support
+    this._container.setAttribute('tabindex', '0');
+  }
+
+  /**
+   * Returns a Promise that resolves when the file is opened and the Pane is
+   * ready.
+   */
+  openFile() {
+    return this._openPromise;
+  }
+
+  doMenuCommand(command) {
     switch (command) {
     case 'jump-to':
       // Ask for an address
@@ -358,12 +373,13 @@ FilePane.prototype = {
       this.showStrings();
       break;
     }
-  },
+  }
+
   /**
    * Moves the cursor to the given offset. This is almost identical to just
    * setting the cursor property except it accepts strings.
    */
-  jumpTo: function(offset) {
+  jumpTo(offset) {
     if (typeof offset == 'string') {
       // Parse it using parseInt to allow 0x1F and things to work. This means
       // dumb things like 0apple will work, but whatever.
@@ -372,14 +388,16 @@ FilePane.prototype = {
     if (offset >= 0 && offset <= this.file.size) {
       this._scroller.cursor = offset;
     }
-  },
+  }
+
   /**
    * This is likely going to be moved up a level.
    */
-  showJumpTo: function() {
+  showJumpTo() {
     bootbox.prompt("Jump to address", (result) => this.jumpTo(result));
-  },
-  showStrings: function() {
+  }
+
+  showStrings() {
     if (!this._stringsPane) {
       // Create the strings pane
       var pane = this.workspace.createPane();
@@ -389,14 +407,7 @@ FilePane.prototype = {
       this._stringsPane = new StringsPane(pane, this.file);
     }
     this.workspace.activePane = this._stringsPane;
-  },
-  /**
-   * Closes this UI (removes the HTML from the DOM and closes the underlying
-   * file object).
-   */
-  close: function() {
-    this.pane.close();
   }
-};
+}
 
 module.exports = FilePane;

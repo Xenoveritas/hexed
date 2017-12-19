@@ -6,12 +6,24 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = env => {
   return merge(base(env), {
     entry: {
-      main: "./main.js",
-      'html-main': "./src/html-main.js"
+      main: "./src/main.js",
+      render: "./src/render.js"
     },
     output: {
       filename: "[name].js",
       path: path.resolve(__dirname, "../app")
-    }
+    },
+    plugins: [
+      new CopyWebpackPlugin([
+        {
+          from: './node_modules/xel/stylesheets/vanilla.theme.css',
+          to: path.resolve(__dirname, "../app/xel/stylesheets")
+        },
+        {
+          from: './node_modules/xel/xel.min.js',
+          to: path.resolve(__dirname, "../app/xel")
+        }
+      ])
+    ]
   });
 };

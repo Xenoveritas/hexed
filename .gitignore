@@ -9,4 +9,5 @@
 
 # Ignore webpack generated files
 /app/main.js
-/app/html-main.js
+/app/render.js
+/app/xel/
