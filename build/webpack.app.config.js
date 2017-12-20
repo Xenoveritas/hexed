@@ -20,6 +20,10 @@ module.exports = env => {
           to: path.resolve(__dirname, "../app/xel/stylesheets")
         },
         {
+          from: './node_modules/xel/stylesheets/macos.theme.css',
+          to: path.resolve(__dirname, "../app/xel/stylesheets")
+        },
+        {
           from: './node_modules/xel/xel.min.js',
           to: path.resolve(__dirname, "../app/xel")
         }

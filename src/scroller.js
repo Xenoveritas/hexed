@@ -236,6 +236,7 @@ class Scroller {
     var needsRedraw = this.getVisibleLines() + this.getFirstLine() <= this.totalLines;
     this.totalLines = lines;
     this.documentHeight = this.lineHeight * this.totalLines;
+    this._scrollBar.total = this.documentHeight;
     if (needsRedraw) {
       this.resetLineContents();
     }

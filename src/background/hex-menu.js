@@ -3,7 +3,8 @@
  * Module for creating the menus.
  */
 
-const {app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
+const hexed = require('../main');
 
 function createTemplate() {
   let command = process.platform == 'darwin' ? 'Command' : 'Ctrl';

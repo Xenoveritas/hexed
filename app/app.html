@@ -4,7 +4,13 @@
 <head>
   <meta charset="utf-8">
   <title>Hexed</title>
-  <link rel="stylesheet" type="text/css" href="xel/stylesheets/vanilla.theme.css">
+  <script type="application/javascript">
+let theme = 'vanilla';
+if (process.platform === 'darwin') {
+  theme = 'macos';
+}
+document.writeln(`<link rel="stylesheet" type="text/css" href="xel/stylesheets/${theme}.theme.css">`);
+  </script>
   <script src="xel/xel.min.js"></script>
 </head>
 <body tabindex="-1">
