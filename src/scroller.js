@@ -4,10 +4,11 @@
  */
 "use strict";
 
+import Scrollbar from './scrollbar.js';
+
 // Internal flag indicating if we should use OS X keyboard shortcuts
 // (specifically Command-Up and Command-Down for Home and End).
 const USE_OSX_SHORTCUTS = process.platform === 'darwin';
-const Scrollbar = require('./scrollbar');
 
 /**
  * A Scroller that scrolls contents in the given DOM element. The default

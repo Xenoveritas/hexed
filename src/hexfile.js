@@ -383,7 +383,7 @@ exports.open = function(filename) {
       if (err) {
         reject(err);
       } else {
-        resolve(new HexFile(filename, fd));
+        new HexFile(filename, fd).init().then(resolve, reject);
       }
     })
   });

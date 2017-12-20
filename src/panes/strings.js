@@ -4,9 +4,11 @@
  * The goal is to eventually move this into a "plugin" that provides the
  * functionality.
  */
+"use strict";
 
-const Scroller = require('./scroller'),
-  strings = require('./strings');
+import Scroller from "../scroller.js";
+import strings from "../strings.js";
+import Pane from "../pane.js";
 
 /**
  * Scroller for showing the strings.
@@ -39,28 +41,15 @@ class StringsScroller extends Scroller {
   }
 }
 
-function StringsPane(pane, file) {
-  pane.title = 'Strings - ' + file.filename;
-  this.pane = pane;
-  this.file = file;
-  var div = document.createElement('div');
-  div.className = 'strings';
-  this.scroller = new StringsScroller(div);
-  pane.contents.appendChild(div);
-  if (pane.active)
-    div.focus();
-  pane.on('should-focus', (function(element) {
-    return function() { element.focus(); };
-  })(div));
-  strings.scan(file, (function(scroller) {
-    return function(err, str, offset, encoding) {
-      scroller._addString(offset, str);
-    };
-  })(this.scroller));
+export class StringsPane extends Pane {
+  constructor(file) {
+    super();
+    this.title = 'Strings - ' + file.filename;
+    this.scroller = new StringsScroller(this.contents);
+    strings.scan(file, (err, str, offset, encoding) => {
+      this.scroller._addString(offset, str);
+    });
+  }
 }
-
-StringsPane.prototype = {
-
-};
 
 module.exports = StringsPane;

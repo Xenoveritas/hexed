@@ -53,6 +53,11 @@ class Hexed {
     this._workspace.addPane(pane);
   }
 
+  get activePane() {
+    let pane = this._workspace.activePane;
+    return pane ? pane.pane : null;
+  }
+
   /**
    * Opens a given file.
    */
@@ -83,7 +88,7 @@ class Hexed {
   doMenuCommand(command) {
     if (command == 'close-pane') {
       // A special case that gets handled here.
-      var pane = this.activePane;
+      let pane = this.activePane;
       if (pane) {
         pane.close();
       }
@@ -94,9 +99,9 @@ class Hexed {
       return;
     }
     // Pass through to the active pane.
-    var pane = this.contents.activePane;
+    let pane = this.activePane;
     if (pane)
-      pane.doMenuCommand(command);
+      pane.executeMenuCommand(command);
   }
 };
 

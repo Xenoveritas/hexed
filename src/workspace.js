@@ -2,32 +2,7 @@
  * Module for dealing with the generic workspace.
  */
 
-import EventEmitter from 'events';
-
-const debuglog = require('./debuglog').debuglog('workspace');
-
-/**
- * A Pane within the workspace. A Pane is a simple wrapper around a <hex-pane>
- * element.
- */
-export class Pane extends EventEmitter {
-  constructor() {
-    super();
-    this._contents = document.createElement('hexed-pane');
-  }
-
-  get contents() {
-    return this._contents;
-  }
-
-  get title() {
-    return this._contents.tabTitle;
-  }
-
-  set title(value) {
-    this._contents.tabTitle = value;
-  }
-}
+import Pane from './pane.js';
 
 let hexedAutoId = 0;
 function generateNextID() {
@@ -143,6 +118,10 @@ class HexedWorkspace extends HTMLElement {
         }
         found = true;
       } else {
+        if (child.style.display !== 'none') {
+          // Let this child know that it is about to be hidden.
+          child.dispatchEvent(new CustomEvent("deactivated"));
+        }
         child.style.display = 'none';
         let tab = this._tabs.get(child.getAttribute('id'));
         if (tab) {
@@ -151,9 +130,16 @@ class HexedWorkspace extends HTMLElement {
       }
     }
     this._placeholder.style.display = found ? 'none' : 'block';
+    if (found) {
+      // If we found it, inform it that we're activating it.
+      value.dispatchEvent(new CustomEvent("activated"));
+    }
   }
 
   addPane(pane) {
+    if (pane instanceof Pane) {
+      pane.workspace = this;
+    }
     let node = pane instanceof HTMLElement ? pane : pane.contents;
     if (!(node instanceof HTMLElement)) {
       throw new Error("Cannot add " + Object.prototype.toString.call(node) + " as pane");
@@ -261,35 +247,3 @@ class HexedWorkspace extends HTMLElement {
   }
 }
 window.customElements.define('hexed-workspace', HexedWorkspace);
-
-class HexedPane extends HTMLElement {
-  static get observedAttributes() {
-    return ['tab-title', 'active'];
-  }
-
-  constructor() {
-    super();
-  }
-
-  get tabTitle() {
-    return this.getAttribute("tab-title");
-  }
-
-  set tabTitle(value) {
-    this.setAttribute("tab-title", value);
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case 'tab-title':
-        let workspace = this.closest('hexed-workspace');
-        if (workspace) {
-          workspace._tabTitleChanged(this);
-        }
-        break;
-      case 'active':
-        break;
-    }
-  }
-}
-window.customElements.define('hexed-pane', HexedPane);

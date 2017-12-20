@@ -1,3 +1,5 @@
+import Pane from '../pane.js';
+
 let version = null;
 
 function getVersion() {
@@ -9,8 +11,6 @@ function getVersion() {
     return version;
   }
 }
-
-import {Pane} from '../workspace.js';
 
 export class AboutPane extends Pane {
   constructor() {

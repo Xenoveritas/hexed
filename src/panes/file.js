@@ -4,14 +4,12 @@
  * every single line of bytes would - well, not work.
  */
 
-const bootbox = require('bootbox'),
-  Scroller = require('../scroller'),
-  StringsPane = require('../strings-pane'),
-  USE_OSX_SHORTCUTS = process.platform === 'darwin',
-  htmlEscapes = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
-
-import {Pane} from '../workspace.js';
+import Pane from '../pane.js';
+import Scroller from '../scroller.js';
 import hexfile from '../hexfile.js';
+import StringsPane from './strings.js';
+const USE_OSX_SHORTCUTS = process.platform === 'darwin',
+  htmlEscapes = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
 
 /**
  * Internal function for converting a byte to a human-readable character for
@@ -122,8 +120,7 @@ class HexedScroller extends Scroller {
     // should be.
     if (!this._widthsCalculated) {
       this._widthsCalculated = true;
-      var temp = document.createElement('div');
-      temp.className = 'hex-file';
+      let temp = document.createElement('hex-file');
       temp.style.position = 'absolute';
       document.body.appendChild(temp);
       temp.appendChild(line);
@@ -296,6 +293,17 @@ class HexedScroller extends Scroller {
   }
 }
 
+/**
+ * Custom element for the hexed-file element. This isn't used for anything in
+ * particular ... yet.
+ */
+class HexFileElement extends HTMLElement {
+  constructor() {
+    super();
+  }
+}
+window.customElements.define('hex-file', HexFileElement);
+
 export class FilePane extends Pane {
   constructor(filename) {
     super();
@@ -314,14 +322,13 @@ export class FilePane extends Pane {
   _init() {
     this.title = this.file.filename;
     // Generate our UI.
-    this._container = document.createElement('div');
-    this._container.className = 'hex-file';
+    this._container = document.createElement('hex-file');
     this.contents.innerHTML = '';
     this.contents.appendChild(this._container);
     this.on('menu', command => this.doMenuCommand(command) );
     this._scroller = new HexedScroller(this._container, this.file);
+    this.contents.addEventListener("activated", () => this._scroller.onresize());
     this.on('should-focus', () => this._container.focus());
-    this.on('focus', () => this._scroller.onresize());
     this.on('closed', () => {
         // Cleanup function
         this._scroller.destroy();
@@ -358,7 +365,7 @@ export class FilePane extends Pane {
     return this._openPromise;
   }
 
-  doMenuCommand(command) {
+  executeMenuCommand(command) {
     switch (command) {
     case 'jump-to':
       // Ask for an address
@@ -400,13 +407,10 @@ export class FilePane extends Pane {
   showStrings() {
     if (!this._stringsPane) {
       // Create the strings pane
-      var pane = this.workspace.createPane();
-      pane.on('closed', (function(me) {
-        return function() { me._stringsPane = null; }
-      })(this));
-      this._stringsPane = new StringsPane(pane, this.file);
+      this._stringsPane = new StringsPane(this.file);
+      this._stringsPane.on('closed', (event) => { this._stringsPane = null; });
     }
-    this.workspace.activePane = this._stringsPane;
+    this.workspace.addPane(this._stringsPane);
   }
 }
 

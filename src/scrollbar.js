@@ -53,16 +53,15 @@ class Scrollbar {
    * Forces the scroll bar to update its visual representation.
    */
   update() {
-    if (this._total == 0 || this._total < this._visibleArea) {
+    if (this._total === 0 || this._total < this._visibleArea) {
       // No scroll bar visible (either no document size or the entire document
       // is visible).
       this._scrollBar.style.display = 'none';
     } else {
       this._scrollBar.style.display = 'block';
-      let barHeight = Math.max(10, (this._visibleArea / this._total) * this._scrollArea.offsetHeight);
+      let barHeight = Math.max(24, (this._visibleArea / this._total) * this._scrollArea.offsetHeight);
       this._scrollBar.style.top = (this._position / (this._total - this._visibleArea)) * (this._scrollArea.offsetHeight - barHeight) + 'px';
       this._scrollBar.style.height = barHeight + 'px';
-      //console.log("Visible: " + this.visibleArea + "; Total: " + this.total + " visible / total: " + this.visibleArea / this.total + "; height: " + this._scrollArea.offsetHeight);
     }
   }
 }
