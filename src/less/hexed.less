@@ -75,37 +75,6 @@ hexed-panel-container {
   height: 100%;
 }
 
-.panes {
-  flex-direction: column;
-  .placeholder {
-    display: flex;
-    font-size: 200%;
-    color: mix(@hexedBackground, @hexedColor);
-    padding: 1em;
-  }
-  ul.tabs {
-    z-index: 100;
-  }
-  .pane-contents {
-    display: flex;
-    flex-grow: 1;
-    position: relative;
-    background-color: @hexedBackground;
-    color: @hexedColor;
-    z-index: 10;
-  }
-  .pane-contents > div {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    &:focus {
-      outline: none;
-    }
-  }
-}
-
 .hex-file .line, .strings .line {
   font-family: monospace;
   font-size: 10pt;

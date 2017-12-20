@@ -53,22 +53,53 @@ class HexedWorkspace extends HTMLElement {
     this._observer = new MutationObserver((mutations) => {
       for (let mutation of mutations) {
         if (mutation.type === 'childList') {
-          // A child was added. Add tabs for all the children.
-          console.log(mutation);
+          // Add tabs for any added children...
           for (let added of mutation.addedNodes) {
             this._addTab(added);
           }
+          // Activate the last tab...
           if (mutation.addedNodes.length > 0) {
             this.activePane = mutation.addedNodes[mutation.addedNodes.length-1];
           }
           for (let removed of mutation.removedNodes) {
             this._removeTab(removed);
           }
+          if (mutation.removedNodes.length > 0) {
+            // If nodes were removed, it's possible that there is no remaining
+            // active node. First see if we can find a selected tab.
+            if (this._doctabs) {
+              let selectedTab = this._doctabs.querySelector("x-doctab[selected]");
+              if (selectedTab) {
+                let pane = this.querySelector('#' + selectedTab.value);
+                if (pane) {
+                  this.activePane = pane;
+                  return;
+                }
+              }
+            }
+            // If we've fallen to here, we don't have a selected tab.
+            if (this.children.length === 0) {
+              this._placeholder.style.display = 'block';
+            } else {
+              this.activePane = this.children[0];
+            }
+          }
         }
       }
     });
     this._observer.observe(this, { childList: true });
     this._tabs = new Map();
+    this._tabSelectListener = (event) => {
+      // The event doesn't tell us *which* tab is selected, just that *a* tab
+      // is selected. Grab the first selected tab, and use that.
+      let tab = this._doctabs.querySelector('x-doctab[selected]');
+      if (tab) {
+        let pane = this.querySelector('#' + tab.value);
+        if (pane) {
+          this.activePane = pane;
+        }
+      }
+    };
   }
 
   get placeholder() {
@@ -92,7 +123,7 @@ class HexedWorkspace extends HTMLElement {
    * This returns the first child that's visible.
    */
   get activePane() {
-    for (let child of this.childNodes) {
+    for (let child of this.children) {
       if (child.style.display = 'block') {
         return child;
       }
@@ -105,9 +136,18 @@ class HexedWorkspace extends HTMLElement {
     for (let child of this.childNodes) {
       if (child === value) {
         child.style.display = 'block';
+        // Find the associated tab and select it
+        let tab = this._tabs.get(value.getAttribute('id'));
+        if (tab) {
+          tab.selected = true;
+        }
         found = true;
       } else {
         child.style.display = 'none';
+        let tab = this._tabs.get(child.getAttribute('id'));
+        if (tab) {
+          tab.selected = false;
+        }
       }
     }
     this._placeholder.style.display = found ? 'none' : 'block';
@@ -144,12 +184,18 @@ class HexedWorkspace extends HTMLElement {
   }
 
   _setDoctabs(doctabs) {
+    if (doctabs === this._doctabs)
+      return;
+    // Undo anything we've done.
+    if (this._doctabs) {
+      this._doctabs.removeEventListener('select', this._tabSelectListener);
+    }
     if (doctabs === null) {
-      // Undo anything we've done.
       this._doctabs = null;
     } else if (typeof doctabs.openTab === 'function') {
       this._doctabs = doctabs;
-      // Populate it with tabs as necessary
+      // TODO: Populate it with tabs as necessary
+      this._doctabs.addEventListener('select', this._tabSelectListener);
     }
   }
 
@@ -175,12 +221,11 @@ class HexedWorkspace extends HTMLElement {
       let xTitle = document.createElement('x-label');
       xTitle.append(title);
       tab.append(xTitle);
-      tab.addEventListener('closed', (event) => {
-        console.log(event);
+      tab.addEventListener('close', (event) => {
         // TODO: Forward this to the pane, because the pane may decline to
         // allow its tab be closed.
-        let pane = document.getElementById(tab.value);
-        if (pane && pane.parentNode === this) {
+        let pane = this.querySelector('#' + tab.value);
+        if (pane) {
           // Remove the association before we remove the node, so we don't try
           // and close the tab that is already being closed
           this._tabs.delete(tab.value);
@@ -199,6 +244,18 @@ class HexedWorkspace extends HTMLElement {
       if (tab) {
         this._doctabs.closeTab(tab);
         this._tabs.delete(id);
+      }
+    }
+  }
+
+  _tabTitleChanged(pane) {
+    let id = pane.getAttribute('id');
+    if (id) {
+      let tab = this._tabs.get(id);
+      if (tab) {
+        let label = tab.querySelector('x-label');
+        if (label)
+          label.innerText = this._getTitleForNode(pane);
       }
     }
   }
@@ -225,7 +282,10 @@ class HexedPane extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case 'tab-title':
-        // TODO: Notify workspace so that the tab can be updated
+        let workspace = this.closest('hexed-workspace');
+        if (workspace) {
+          workspace._tabTitleChanged(this);
+        }
         break;
       case 'active':
         break;
