@@ -12,4 +12,4 @@ It was also very quick to write and lets me add in features that I want, most of
 
 ## Setting Up and Running
 
-Right now getting Hexed up and running should be as simple as installing [node](https://nodejs.org/) and then running `npm install` followed by either `npm run win` (if on Windows) or `npm run mac` if on OS X.
+Right now getting Hexed up and running should be as simple as installing [node](https://nodejs.org/) and then running `npm install`. Once everything is installed, it can be run using `npm start`.
