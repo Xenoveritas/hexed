@@ -304,6 +304,80 @@ class HexFileElement extends HTMLElement {
 }
 window.customElements.define('hex-file', HexFileElement);
 
+class JumpToPopup {
+  constructor(filepane) {
+    this.filepane = filepane;
+    this._popup = document.createElement('hexed-popup');
+    this._popup.className = 'jump-to';
+    this._popup.append(this._address = document.createElement('x-input'));
+    this._popup.append(' ');
+    this._popup.append(this._button = document.createElement('x-button'));
+    this._button.append('Jump To');
+    this._button.addEventListener('click', (event) => {
+      this.jump();
+    });
+    this._address.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.jump();
+      }
+    });
+    this._address.validate = () => {
+      let address = this.value;
+      if (address === null) {
+        this._address.error = "Invalid jump address";
+      } else if (address < 0 || address > filepane.file.size) {
+        this._address.error = "Address out of range";
+      } else {
+        this._address.error = null;
+      }
+    };
+    filepane.contents.append(this._popup);
+  }
+  get value() {
+    // Parse the jump address
+    let address = this._address.value;
+    let m = /^(?:0x|[$#])([0-9A-Fa-f]{1,16})$/.exec(address);
+    if (m) {
+      return parseInt(m[1], 16);
+    } else if (/^0[0-7]{1,21}$/.test(address)) {
+      return parseInt(address, 8);
+    } else if (/^[0-9]{1,20}$/.test(address)) {
+      return parseInt(address, 10);
+    } else {
+      return null;
+    }
+  }
+  jump() {
+    // Parse the jump address
+    let address = this._address.value;
+    console.log("Jump to " + address);
+    let m = /^(?:0x|[$#])([0-9A-Fa-f]{1,16})$/.exec(address);
+    if (m) {
+      address = parseInt(address, 16);
+      console.log("Hex: " + address);
+    } else if (/^0[0-7]{1,21}$/.test(address)) {
+      address = parseInt(address, 8);
+    } else if (/^[0-9]{1,20}$/.test(address)) {
+      address = parseInt(address, 10);
+    } else {
+      this._address.error = "Bad format";
+      return;
+    }
+    if (!this.filepane.jumpTo(address)) {
+      this._address.error = "Address out of range";
+    }
+    this.hide();
+  }
+  hide() {
+    this._popup.hide();
+  }
+  show(address) {
+    this._address.value = '0x' + address.toString(16).padStart(address <= 0xFFFFFFFF ? 8 : 16, '0');
+    this._popup.show();
+    this._address.focus();
+  }
+}
+
 export class FilePane extends Pane {
   constructor(filename) {
     super();
@@ -325,7 +399,6 @@ export class FilePane extends Pane {
     this._container = document.createElement('hex-file');
     this.contents.innerHTML = '';
     this.contents.appendChild(this._container);
-    this.on('menu', command => this.doMenuCommand(command) );
     this._scroller = new HexedScroller(this._container, this.file);
     this.contents.addEventListener("activated", () => this._scroller.onresize());
     this.on('should-focus', () => this._container.focus());
@@ -394,6 +467,9 @@ export class FilePane extends Pane {
     }
     if (offset >= 0 && offset <= this.file.size) {
       this._scroller.cursor = offset;
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -401,7 +477,10 @@ export class FilePane extends Pane {
    * This is likely going to be moved up a level.
    */
   showJumpTo() {
-    bootbox.prompt("Jump to address", (result) => this.jumpTo(result));
+    if (!this._jumpToPopup) {
+      this._jumpToPopup = new JumpToPopup(this);
+    }
+    this._jumpToPopup.show(this._scroller.cursor);
   }
 
   showStrings() {

@@ -38,7 +38,7 @@ export class Pane extends EventEmitter {
   }
 }
 
-class HexedPane extends HTMLElement {
+class HexedPaneElement extends HTMLElement {
   static get observedAttributes() {
     return ['tab-title', 'active'];
   }
@@ -68,6 +68,22 @@ class HexedPane extends HTMLElement {
     }
   }
 }
-window.customElements.define('hexed-pane', HexedPane);
+window.customElements.define('hexed-pane', HexedPaneElement);
+
+/**
+ * Small popup.
+ */
+class HexedPopupElement extends HTMLElement {
+  constructor() {
+    super();
+  }
+  hide() {
+    this.style.display = 'none';
+  }
+  show() {
+    this.style.display = 'flex';
+  }
+}
+window.customElements.define('hexed-popup', HexedPopupElement);
 
 module.exports = Pane;

@@ -91,15 +91,28 @@ hex-file .cursor {
   padding: 3em;
 }
 
+// Popup
+hexed-popup {
+  position: absolute;
+  bottom: 0;
+  background-color: #F0F0F0;
+  color: #000;
+  display: flex;
+  width: 100%;
+  padding: 4px 16px 4px 16px;
+}
+
 // Scrollbar
 
 @scrollbarWidth: 8px;
+@scrollbarPadding: 2px;
 
 .scrollbar {
   position: absolute;
   right: 0;
-  width: @scrollbarWidth;
+  width: @scrollbarWidth + @scrollbarPadding;
   height: 100%;
+  padding-right: @scrollbarPadding;
   .bar {
     background: #666;
     border-radius: @scrollbarWidth / 2;
