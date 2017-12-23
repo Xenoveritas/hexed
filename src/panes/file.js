@@ -33,13 +33,12 @@ function convertByte(byte) {
 class HexedScroller extends Scroller {
   constructor(container, file) {
     super(container);
-    container.style.position = 'absolute';
     this.file = file;
+    this._widthsCalculated = false;
     // This may eventually become a proper property with write support.
     this.bytesPerLine = 16;
     // Figure out how many lines there are at 16 bytes per line
     this.setTotalLines(Math.ceil(file.size / this.bytesPerLine));
-    this._widthsCalculated = false;
     // Create the cursor property.
     // Cursor starts as null so we can do this.cursor = 0 to initialize it
     this._cursor = null;
@@ -67,6 +66,8 @@ class HexedScroller extends Scroller {
       enumerable: true
     });
     this.cursor = 0;
+    // Try and force the line widths if necessary.
+    this._calculateWidths();
   }
 
   get cursor() {
@@ -118,29 +119,40 @@ class HexedScroller extends Scroller {
     line._gutter = gutter;
     line._data = data;
     line._decoded = decoded;
+    if (this._widthsCalculated) {
+      gutter.style.width = this._gutterWidth;
+      data.style.width = this._dataWidth;
+    }
+  }
+
+  _calculateWidths() {
     // If we don't have the widths calculated yet, we need to figure out what they
     // should be.
     if (!this._widthsCalculated) {
       this._widthsCalculated = true;
-      let temp = document.createElement('hex-file');
+      let temp = document.createElement('hex-file'),
+        line = this.createLine();
       temp.style.position = 'absolute';
       document.body.appendChild(temp);
       temp.appendChild(line);
       // Calculate the width of the largest offset.
-      gutter.innerHTML = Math.floor(this.file.size / 16).toString(16) + '0';
-      this._gutterWidth = window.getComputedStyle(gutter).width;
-      this._dataWidth = window.getComputedStyle(data).width;
+      line._gutter.innerHTML = Math.floor(this.file.size / 16).toString(16) + '0';
+      this._gutterWidth = window.getComputedStyle(line._gutter).width;
+      this._dataWidth = window.getComputedStyle(line._data).width;
       temp.removeChild(line);
       document.body.removeChild(temp);
+      // And reset any lines that missed this
+      this.forEachLine(line => {
+        line._gutter.style.width = this._gutterWidth;
+        line._data.style.width = this._dataWidth;
+      });
     }
-    gutter.style.width = this._gutterWidth;
-    data.style.width = this._dataWidth;
   }
 
   setLineContent(line, lineNumber) {
     let offset = lineNumber * 16;
     line.className = 'line ' + ((lineNumber & 1 === 1) ? 'even' : 'odd');
-    if (offset > this.file.size) {
+    if ((!this.file) || offset > this.file.size) {
       // Nothing here.
       line.className += ' empty';
       line._gutter.innerHTML = '\u00A0';

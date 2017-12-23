@@ -31,7 +31,9 @@ body {
 
 // Custom tags used to lay stuff out
 hexed-workspace {
-  display: block;
+  display: flex;
+  align-items: stretch;
+  align-content: stretch;
   overflow: hidden;
   position: relative;
   flex-grow: 1;
@@ -39,19 +41,18 @@ hexed-workspace {
 
 hexed-pane {
   display: flex;
-  width: 100%;
-  height: 100%;
+  flex-grow: 1;
 }
 
 hexed-sidebar {
-  position: absolute;
-  right: 0;
+  // This should be positioned via flex
   top: 0;
   bottom: 0;
   background-color: @panelBackground;
   font-size: 10pt;
   padding: 0 1em;
   border-left: solid 1px @panelBorder;
+  z-index: 1;
 }
 
 hex-file {
