@@ -30,7 +30,6 @@ class Scroller extends EventEmitter {
     // Set up some CSS
     this.container.className += ' scroller';
     this.container.style.position = 'relative';
-    this.container.style.overflowY = 'visible';
     this.container.setAttribute('tabindex', '0');
     // Add a container to hold the various lines.
     this._lineContainer = document.createElement('div');
@@ -97,9 +96,8 @@ class Scroller extends EventEmitter {
       // We want the wheel delta to deal with smooth scrolling. Note that this
       // is probably Chrome-specific. Who cares.
       this.scrollBy(-event.wheelDeltaY);
-      event.preventDefault();
     };
-    this.container.addEventListener('mousewheel', this._wheelListener, false);
+    this.container.addEventListener('mousewheel', this._wheelListener, { passive: true });
     // Add key listeners
     this._keyListener = (event) => {
       if (this.onkeydown(event) === true)
@@ -158,7 +156,7 @@ class Scroller extends EventEmitter {
     // We still need to generate lines for the available space, but we need to
     // defer that until the document is ready and actually laid out if it
     // currently isn't.
-    if (container.offsetHeight == 0) {
+    if (container.offsetHeight === 0) {
       let handler = ((attempts) => {
         var attempts = 0, handler = () => {
           if (container.offsetHeight === 0) {

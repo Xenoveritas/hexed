@@ -9,7 +9,11 @@ let theme = 'vanilla';
 if (process.platform === 'darwin') {
   theme = 'macos';
 }
-document.writeln(`<link rel="stylesheet" type="text/css" href="xel/stylesheets/${theme}.theme.css">`);
+let style = document.createElement('link');
+style.setAttribute('rel', 'stylesheet');
+style.setAttribute('type', 'text/css');
+style.setAttribute('href', `xel/stylesheets/${theme}.theme.css`);
+document.head.append(style);
   </script>
   <script src="xel/xel.min.js"></script>
 </head>
