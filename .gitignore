@@ -3,6 +3,7 @@
 
 # Ignore random OS crap
 .DS_Store
+Thumbs.db
 
 # Ignore map files
 *.map
@@ -11,3 +12,9 @@
 /app/main.js
 /app/render.js
 /app/xel/
+
+# Ignore dist files
+/dist
+
+# Ignore test files
+/temp
