@@ -15,7 +15,7 @@
    viewBox="0 0 32 32"
    version="1.1"
    id="svg8"
-   sodipodi:docname="hexed.svg"
+   sodipodi:docname="icon.svg"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    inkscape:export-xdpi="1536.0001"
    inkscape:export-ydpi="1536.0001">
@@ -42,7 +42,7 @@
        fx="15.937822"
        fy="15.892305"
        r="12.062178"
-       gradientTransform="matrix(1.0326547,0,0,1.1893336,-0.52247551,-3.0124651)"
+       gradientTransform="matrix(1.0385994,0,0,1.1961802,-0.61759104,-3.1219148)"
        gradientUnits="userSpaceOnUse" />
   </defs>
   <sodipodi:namedview
@@ -52,9 +52,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="26.8125"
-     inkscape:cx="9.7715618"
-     inkscape:cy="16"
+     inkscape:zoom="22.627417"
+     inkscape:cx="15.17334"
+     inkscape:cy="21.603651"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -79,7 +79,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -93,14 +93,15 @@
        sodipodi:sides="6"
        sodipodi:cx="16"
        sodipodi:cy="16"
-       sodipodi:r1="14.346098"
-       sodipodi:r2="12.424085"
-       sodipodi:arg1="0.52807445"
-       sodipodi:arg2="1.0516732"
+       sodipodi:r1="14.428685"
+       sodipodi:r2="12.495607"
+       sodipodi:arg1="0"
+       sodipodi:arg2="0"
        inkscape:flatsided="true"
        inkscape:rounded="0"
        inkscape:randomized="0"
-       d="M 28.391857,23.228583 15.935792,30.345954 3.543935,23.117371 3.6081433,8.7714169 16.064208,1.6540457 28.456065,8.8826288 Z"
-       style="fill:url(#radialGradient4518);fill-opacity:1;stroke:#004000;stroke-width:1;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none" />
+       d="M 30.428685,16 23.214343,28.495608 H 8.7856574 L 1.5713148,16 8.7856574,3.5043921 l 14.4286856,0 z"
+       style="fill:url(#radialGradient4518);fill-opacity:1;stroke:#004000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       transform="rotate(-90,16,16)" />
   </g>
 </svg>
