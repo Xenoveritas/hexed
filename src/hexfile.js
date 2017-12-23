@@ -22,7 +22,7 @@ const BLOCK_SIZE = 4096;
  */
 class Block {
   constructor(index, buffer) {
-    this.buffer = buffer == null ? new Buffer(BLOCK_SIZE) : buffer;
+    this.buffer = buffer == null ? Buffer.alloc(BLOCK_SIZE) : buffer;
     /**
      * Actual length of the block. This is nearly always BLOCK_SIZE - the sole
      * exception is the last block of the file, which can (or not, if the file
@@ -194,8 +194,8 @@ class HexFile extends EventEmitter {
 
   /**
    * Ensure that a given section of the file is cached. The callback will be
-   * invoked when the blocks are loaded, but it will not be given any data. If all
-   * the blocks covered are loaded, the callback will simply be called
+   * invoked when the blocks are loaded, but it will not be given any data. If
+   * all the blocks covered are loaded, the callback will simply be called
    * immediately.
    */
   ensureCached(offset, length, callback) {
@@ -210,7 +210,7 @@ class HexFile extends EventEmitter {
     // TODO: Increase cache size in this case? I'm not sure what the "correct"
     // behavior is.
     if (lastIndex - firstIndex >= this._blocks.max)
-      throw new Error('Attempting to ensure more cached blocks (' + (lastIndex - firstIndex + 1) + ') than cache size (' + this._blocks.max + ')');
+      throw new Error(`Attempting to ensure more cached blocks (${lastIndex - firstIndex + 1}) than cache size (${this._blocks.max})`);
     debuglog('Ensure cached [%s:%d] => [%d,%d]', offset.toString(16), length, firstIndex, lastIndex);
     for (let i = firstIndex; i <= lastIndex; i++) {
       let block = this._getBlock(i);
@@ -326,7 +326,7 @@ class HexFile extends EventEmitter {
     let index = Math.floor(offset / BLOCK_SIZE),
       lastIndex = Math.ceil(lastOffset / BLOCK_SIZE),
       me = this,
-      buffer = new Buffer(BLOCK_SIZE),
+      buffer = Buffer.allocUnsafe(BLOCK_SIZE),
       readNextBlock = function() {
         // In order to avoid destroying the stack if we have enough cached blocks
         // to scan through, do this in a loop. We only break the loop once we have

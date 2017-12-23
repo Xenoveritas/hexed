@@ -4,6 +4,8 @@
  * every single line of bytes would - well, not work.
  */
 
+"use strict";
+
 import Pane from '../pane.js';
 import Scroller from '../scroller.js';
 import hexfile from '../hexfile.js';
@@ -40,35 +42,7 @@ class HexedScroller extends Scroller {
     this._widthsCalculated = false;
     // Create the cursor property.
     // Cursor starts as null so we can do this.cursor = 0 to initialize it
-    let cursor = null;
-    Object.defineProperty(this, 'cursor', {
-      get: () => {
-        return cursor;
-      },
-      set: (value) => {
-        value = this._clampOffset(value);
-        // Note: at present file.size isn't a valid offset since that's one past
-        // the end of the file and we don't do editing. With editing it is
-        // because it means "append."
-        if (value == this.file.size)
-          value--;
-        if (value != null && value !== cursor) {
-          // At this point we need to update the DOM to mark the new cursor
-          // location.
-          var oldLine = Math.floor(cursor / this.bytesPerLine),
-            newLine = Math.floor(value / this.bytesPerLine);
-          cursor = value;
-          if (oldLine != newLine) {
-            this.updateLine(oldLine);
-          }
-          this.updateLine(newLine);
-          // Make sure that line is visible
-          this.scrollLineIntoView(newLine);
-        }
-        return cursor;
-      },
-      enumerable: true
-    });
+    this._cursor = null;
     // Define the selection start/end property.
     var selectionStart = null, selectionEnd = null;
     Object.defineProperty(this, 'selectionStart', {
@@ -93,6 +67,34 @@ class HexedScroller extends Scroller {
       enumerable: true
     });
     this.cursor = 0;
+  }
+
+  get cursor() {
+    return this._cursor;
+  }
+  set cursor(value) {
+    value = this._clampOffset(value);
+    // Note: at present file.size isn't a valid offset since that's one past
+    // the end of the file and we don't do editing. With editing it is
+    // because it means "append."
+    if (value == this.file.size)
+      value--;
+    if (value != null && value !== this._cursor) {
+      // At this point we need to update the DOM to mark the new cursor
+      // location.
+      let oldLine = Math.floor(this._cursor / this.bytesPerLine),
+        newLine = Math.floor(value / this.bytesPerLine);
+      let oldCursor = this._cursor;
+      this._cursor = value;
+      if (oldLine != newLine) {
+        this.updateLine(oldLine);
+      }
+      this.updateLine(newLine);
+      // Make sure that line is visible
+      this.scrollLineIntoView(newLine);
+      this.emit('cursor-changed', oldCursor, this._cursor);
+    }
+    return this._cursor;
   }
 
   // We need to override a few specific items.
@@ -137,9 +139,10 @@ class HexedScroller extends Scroller {
 
   setLineContent(line, lineNumber) {
     let offset = lineNumber * 16;
+    line.className = 'line ' + ((lineNumber & 1 === 1) ? 'even' : 'odd');
     if (offset > this.file.size) {
       // Nothing here.
-      line.className = 'line empty';
+      line.className += ' empty';
       line._gutter.innerHTML = '\u00A0';
       line._data.innerHTML = '\u00A0';
       line._decoded.innerHTML = '\u00A0';
@@ -147,21 +150,20 @@ class HexedScroller extends Scroller {
     } else {
       line._gutter.innerHTML = offset.toString(16).toUpperCase();
       // See if we can grab the line right now.
-      var data = this.file.readCached(offset, 16);
+      let data = this.file.readCached(offset, 16);
       if (data == null) {
         // FIXME: The cursor can be in unloaded data. I really don't like how the
         // cursor is currently implemented.
         // We have no data, so just show that.
-        line.className = 'line loading';
+        line.className += ' loading';
         line._data.innerHTML = '?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??';
         line._decoded.innerHTML = '????????????????';
         return false;
       } else {
-        var cursor = this.cursor;
-        line.className = 'line';
+        let cursor = this.cursor;
         // bytes should be a slice of a buffer
-        var hex = new Array(data.length), decoded = new Array(data.length);
-        for (var i = 0; i < data.length; i++) {
+        let hex = new Array(data.length), decoded = new Array(data.length);
+        for (let i = 0; i < data.length; i++) {
           // Not clear if byte is signed or not, so make it unsigned
           var byte = data[i] & 0xFF,
             h = byte.toString(16).toUpperCase();
@@ -288,8 +290,60 @@ class HexedScroller extends Scroller {
     if (offset < 0)
       return 0;
     if (offset > this.file.size)
-      return offset.file.size;
+      return this.file.size;
     return offset;
+  }
+}
+
+class FileSidebar {
+  constructor(pane) {
+    this.pane = pane;
+    this.pane.contents.append(this._sidebar = document.createElement('hexed-sidebar'));
+    // Use an actual table for this:
+    this._sidebar.innerHTML = `<table><tbody>
+<tr><th>Position</th><td class="position"></td>
+<tr><th>byte</th><td class="value type-int8"></td>
+<tr><th>16-bit int</th><td class="value type-int16"></td>
+<tr><th>32-bit int</th><td class="value type-int32"></td><!--
+<tr><th>64-bit int</th><td class="value type-int64"></td>
+<tr><th>32-bit float</th><td class="value type-float"></td>
+<tr><th>64-bit float</th><td class="value type-double"></td>-->
+</tbody></table>`;
+    this._position = this._sidebar.querySelector('.position');
+    this._value8 = this._sidebar.querySelector('.type-int8');
+    this._value16 = this._sidebar.querySelector('.type-int16');
+    this._value32 = this._sidebar.querySelector('.type-int32');
+    // TODO: Figure out a way to deal with 64-bit values despite an apparent
+    // cap of 48 bit math in Node
+    // this._value64 = this._sidebar.querySelector('.type-int64');
+    // this._valueFloat = this._sidebar.querySelector('.type-float');
+    // this._valueFloat = this._sidebar.querySelector('.type-double');
+    this._littleEndian = true;
+    this.update();
+  }
+  update() {
+    let offset = this.pane.cursor;
+    this._position.innerText = `${offset} (0x${offset.toString(16).padStart(offset <= 0xFFFFFFFF ? 8 : 16, '0')})`;
+    let data = this.pane.file.readCached(offset, 16);
+    if (data === null) {
+      this._value8.innerText = '??';
+      this._value16.innerText = '??';
+      this._value32.innerText = '??';
+      // this._value64.innerText = '??';
+      // TODO: Set a callback that will know when the block is ready
+    } else {
+      this._value8.innerText = this._formatValue(data, 1);
+      this._value16.innerText = this._formatValue(data, 2);
+      this._value32.innerText = this._formatValue(data, 4);
+      // this._value64.innerText = this._formatValue(data, 8);
+    }
+  }
+  _formatValue(buffer, size) {
+    if (buffer.length < size) {
+      return '(past end)';
+    }
+    let v = buffer['readUInt' + (size*8) + (size > 1 ? (this._littleEndian ? 'LE' : 'BE') : '')](0);
+    return `${v.toString()} (0x${v.toString(16).toUpperCase().padStart(size, '0')})`;
   }
 }
 
@@ -366,6 +420,7 @@ class JumpToPopup {
     if (!this.filepane.jumpTo(address)) {
       this._address.error = "Address out of range";
     }
+    this.filepane.focus();
     this.hide();
   }
   hide() {
@@ -393,6 +448,16 @@ export class FilePane extends Pane {
     this.contents.innerHTML = '<p class="loading">Loading...</p>';
   }
 
+  get cursor() {
+    return this._scroller ? this._scroller.cursor : null;
+  }
+
+  set cursor(value) {
+    if (this._scroller) {
+      this._scroller.cursor = value;
+    }
+  }
+
   _init() {
     this.title = this.file.filename;
     // Generate our UI.
@@ -400,7 +465,14 @@ export class FilePane extends Pane {
     this.contents.innerHTML = '';
     this.contents.appendChild(this._container);
     this._scroller = new HexedScroller(this._container, this.file);
-    this.contents.addEventListener("activated", () => this._scroller.onresize());
+    this._sidebar = new FileSidebar(this);
+    this.contents.addEventListener("activated", () => {
+      this._scroller.onresize();
+      this._scroller.focus();
+    });
+    this._scroller.on('cursor-changed', (oldPos, newPos) => {
+      this._sidebar.update();
+    });
     this.on('should-focus', () => this._container.focus());
     this.on('closed', () => {
         // Cleanup function
@@ -413,10 +485,6 @@ export class FilePane extends Pane {
     }
     // Various properties that delegate to the scroller
     (function(me, scroller) {
-      Object.defineProperty(me, 'cursor', {
-        get: function() { return scroller.cursor; },
-        set: function(value) { return scroller.cursor = value; }
-      });
       Object.defineProperty(me, 'selectionStart', {
         get: function() { return scroller.selectionStart; },
         set: function(value) { return scroller.selectionStart = value; }
@@ -452,6 +520,16 @@ export class FilePane extends Pane {
     case 'strings':
       this.showStrings();
       break;
+    }
+  }
+
+  /**
+   * Asks the scroller to take keyboard focus. If the file isn't loaded yet,
+   * this does nothing.
+   */
+  focus() {
+    if (this._scroller) {
+      this._scroller.focus();
     }
   }
 

@@ -70,6 +70,13 @@ class HexedPaneElement extends HTMLElement {
 }
 window.customElements.define('hexed-pane', HexedPaneElement);
 
+class HexedSidebarElement extends HTMLElement {
+  constructor() {
+    super();
+  }
+}
+window.customElements.define('hexed-sidebar', HexedSidebarElement);
+
 /**
  * Small popup.
  */

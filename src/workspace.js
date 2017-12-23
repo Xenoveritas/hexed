@@ -99,7 +99,7 @@ class HexedWorkspace extends HTMLElement {
    */
   get activePane() {
     for (let child of this.children) {
-      if (child.style.display = 'block') {
+      if (child.style.display = '') {
         return child;
       }
     }
@@ -110,7 +110,7 @@ class HexedWorkspace extends HTMLElement {
     let found = false;
     for (let child of this.childNodes) {
       if (child === value) {
-        child.style.display = 'block';
+        child.style.display = '';
         // Find the associated tab and select it
         let tab = this._tabs.get(value.getAttribute('id'));
         if (tab) {
@@ -129,7 +129,7 @@ class HexedWorkspace extends HTMLElement {
         }
       }
     }
-    this._placeholder.style.display = found ? 'none' : 'block';
+    this._placeholder.style.display = found ? 'none' : '';
     if (found) {
       // If we found it, inform it that we're activating it.
       value.dispatchEvent(new CustomEvent("activated"));

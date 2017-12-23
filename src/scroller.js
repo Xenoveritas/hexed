@@ -4,6 +4,7 @@
  */
 "use strict";
 
+import EventEmitter from 'events';
 import Scrollbar from './scrollbar.js';
 
 // Internal flag indicating if we should use OS X keyboard shortcuts
@@ -16,11 +17,12 @@ const USE_OSX_SHORTCUTS = process.platform === 'darwin';
  * {@link #createLineContent} and {@link #setLineContent} methods to generate
  * useful content.
  */
-class Scroller {
+class Scroller extends EventEmitter {
   /**
    * Create a new Scroller within the given container.
    */
   constructor(container) {
+    super();
     /**
      * The containing element as defined on creation.
      */
@@ -378,6 +380,15 @@ class Scroller {
    */
   onscrolled(y, firstLine, height, lastLine) {
   }
+
+  /**
+   * The same as calling this.container.focus(), causes the scroller to take
+   * keyboard focus.
+   */
+  focus() {
+    this.container.focus();
+  }
+
   /**
    * Allows an underlying scroller to hook into the default keyboard handling
    * the scroller provides. This method should return <code>true</code> if it
