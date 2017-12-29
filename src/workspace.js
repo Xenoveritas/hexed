@@ -99,7 +99,7 @@ class HexedWorkspace extends HTMLElement {
    */
   get activePane() {
     for (let child of this.children) {
-      if (child.style.display = '') {
+      if (child.style.display == '') {
         return child;
       }
     }
