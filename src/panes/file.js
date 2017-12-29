@@ -30,6 +30,45 @@ function convertByte(byte) {
   }
 }
 
+/**
+ * Find the offset to a given child node in characters.
+ */
+function _findOffset(node, needle) {
+  let result = 0;
+  for (let child of node.childNodes) {
+    if (child === needle) {
+      // Done
+      return result;
+    }
+    if (child.nodeType === 1 /* ELEMENT_NODE */) {
+      result += _findOffset(child, needle);
+    } else if (child.nodeType === 3 /* TEXT_NODE */) {
+      result += child.length;
+    }
+  }
+  // We may never find the node being looked for, but should still return the
+  // number of characters passed along the way.
+  return result;
+}
+
+/**
+ * Gets the offset of a range within a given parent node.
+ */
+function findCharacterOffset(parent, clientX, clientY) {
+  let range = document.caretRangeFromPoint(clientX, clientY);
+  // Make sure the clicked node belongs to the parent.
+  let node = range.startContainer;
+  while (node.parentNode !== null) {
+    if (node.parentNode === parent) {
+      break;
+    } else if (node.parentNode === null) {
+      return null;
+    }
+    node = node.parentNode;
+  }
+  return _findOffset(parent, node) + range.startOffset;
+}
+
 class HexedScroller extends Scroller {
   constructor(container, file) {
     super(container);
@@ -102,20 +141,13 @@ class HexedScroller extends Scroller {
   createLineContent(line) {
     // Set the CSS class name
     line.className = 'line';
-    // Each line has three parts - the gutter, the hex data about the line, and
-    // finally the decoded text about the line.
-    var gutter = document.createElement('span');
-    var data = document.createElement('span');
-    var decoded = document.createElement('span');
-    gutter.className = 'gutter';
-    gutter.innerHTML = '0';
-    data.className = 'data';
-    data.innerHTML = '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00';
-    decoded.className = 'decoded';
-    decoded.innerHTML = '0000000000000000';
-    line.appendChild(gutter);
-    line.appendChild(data);
-    line.appendChild(decoded);
+    if (!this._lineTemplate) {
+      this._lineTemplate = document.getElementById('hex-file-line-template');
+    }
+    line.append(document.importNode(this._lineTemplate.content, true));
+    let gutter = line.querySelector('.gutter');
+    let data = line.querySelector('.data');
+    let decoded = line.querySelector('.decoded');
     line._gutter = gutter;
     line._data = data;
     line._decoded = decoded;
@@ -123,6 +155,17 @@ class HexedScroller extends Scroller {
       gutter.style.width = this._gutterWidth;
       data.style.width = this._dataWidth;
     }
+    gutter.addEventListener('click', (event) => this._clickLine(event, line));
+    data.addEventListener('click', (event) => {
+      // Need to figure out where within this data span the click is.
+      let offset = findCharacterOffset(data, event.clientX, event.clientY);
+      // The +0.5 is to split the difference in the spaces between characters.
+      this.cursor = line._offset + Math.floor((offset / 3) + 0.5);
+    });
+    decoded.addEventListener('click', (event) => {
+      let offset = findCharacterOffset(decoded, event.clientX, event.clientY);
+      this.cursor = line._offset + offset;
+    });
   }
 
   _calculateWidths() {
@@ -152,6 +195,7 @@ class HexedScroller extends Scroller {
   setLineContent(line, lineNumber) {
     let offset = lineNumber * 16;
     line.className = 'line ' + ((lineNumber & 1 === 1) ? 'even' : 'odd');
+    line._offset = offset;
     if ((!this.file) || offset > this.file.size) {
       // Nothing here.
       line.className += ' empty';
@@ -305,6 +349,13 @@ class HexedScroller extends Scroller {
       return this.file.size;
     return offset;
   }
+
+  /**
+   * Receive notification that the gutter was clicked on for a given line.
+   * Currently this does nothing.
+   */
+  _clickLine(event, line) {
+  }
 }
 
 class FileSidebar {
@@ -348,7 +399,7 @@ class FileSidebar {
       this._value16.innerText = '??';
       this._value32.innerText = '??';
       // this._value64.innerText = '??';
-      // TODO: Set a callback that will know when the block is ready
+      this.pane.file.ensureCached(offset, 16, () => this.update());
     } else {
       this._value8.innerText = this._formatBufferValue(data, 1);
       this._value16.innerText = this._formatBufferValue(data, 2);
