@@ -21,6 +21,35 @@ document.head.append(style);
   <x-doctabs id="hexed-tabs" maxtabs="1024"></x-doctabs>
   <hexed-workspace doctabs="hexed-tabs" placeholder="Use File, Open... to open a file or drag and drop a file onto this window."></hexed-workspace>
   <footer id="status">Hexed</footer>
+  <!-- Templates -->
+  <template id="hex-file-stats-template">
+    <table>
+      <tbody>
+        <tr><th>Position</th><td class="position"></td></tr>
+        <tr><th>byte</th><td class="value type-int8"></td></tr>
+        <tr><th>16-bit int</th><td class="value type-int16"></td></tr>
+        <tr><th>32-bit int</th><td class="value type-int32"></td></tr>
+<!--
+        <tr><th>64-bit int</th><td class="value type-int64"></td></tr>
+        <tr><th>32-bit float</th><td class="value type-float"></td></tr>
+        <tr><th>64-bit float</th><td class="value type-double"></td></tr>
+-->
+      </tbody>
+    </table>
+    <x-select class="size">
+      <x-menu>
+        <x-menuitem value="8"><x-label>Octal</x-label></x-menuitem>
+        <x-menuitem value="10"><x-label>Decimal</x-label></x-menuitem>
+        <x-menuitem value="16"><x-label>Hexidecimal</x-label></x-menuitem>
+      </x-menu>
+    </x-select>
+    <x-select class="endian">
+      <x-menu>
+        <x-menuitem value="little"><x-label>Little Endian</x-label></x-menuitem>
+        <x-menuitem value="big"><x-label>Big Endian</x-label></x-menuitem>
+      </x-menu>
+    </x-select>
+  </template>
   <script src="render.js"></script>
 </body>
 </html>

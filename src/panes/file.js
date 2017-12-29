@@ -309,18 +309,13 @@ class HexedScroller extends Scroller {
 
 class FileSidebar {
   constructor(pane) {
+    this._littleEndian = true;
+    this._size = 10;
     this.pane = pane;
     this.pane.contents.append(this._sidebar = document.createElement('hexed-sidebar'));
-    // Use an actual table for this:
-    this._sidebar.innerHTML = `<table><tbody>
-<tr><th>Position</th><td class="position"></td>
-<tr><th>byte</th><td class="value type-int8"></td>
-<tr><th>16-bit int</th><td class="value type-int16"></td>
-<tr><th>32-bit int</th><td class="value type-int32"></td><!--
-<tr><th>64-bit int</th><td class="value type-int64"></td>
-<tr><th>32-bit float</th><td class="value type-float"></td>
-<tr><th>64-bit float</th><td class="value type-double"></td>-->
-</tbody></table>`;
+    this._sidebar.className = 'hex-file-stats';
+    let template = document.getElementById('hex-file-stats-template');
+    this._sidebar.append(document.importNode(template.content, true));
     this._position = this._sidebar.querySelector('.position');
     this._value8 = this._sidebar.querySelector('.type-int8');
     this._value16 = this._sidebar.querySelector('.type-int16');
@@ -330,12 +325,23 @@ class FileSidebar {
     // this._value64 = this._sidebar.querySelector('.type-int64');
     // this._valueFloat = this._sidebar.querySelector('.type-float');
     // this._valueFloat = this._sidebar.querySelector('.type-double');
-    this._littleEndian = true;
+    this._sizeSelector = this._sidebar.querySelector('x-select.size');
+    this._sizeSelector.value = this._size.toString();
+    this._sizeSelector.addEventListener('change', (event) => {
+      this._size = parseInt(this._sizeSelector.value);
+      this.update();
+    });
+    this._littleEndianSelector = this._sidebar.querySelector('x-select.endian');
+    this._littleEndianSelector.value = this._littleEndian ? 'little' : 'big';
+    this._littleEndianSelector.addEventListener('change', (event) => {
+      this._littleEndian = this._littleEndianSelector.value === 'little';
+      this.update();
+    });
     this.update();
   }
   update() {
     let offset = this.pane.cursor;
-    this._position.innerText = `${offset} (0x${offset.toString(16).padStart(offset <= 0xFFFFFFFF ? 8 : 16, '0')})`;
+    this._position.innerText = this._formatValue(offset);
     let data = this.pane.file.readCached(offset, 16);
     if (data === null) {
       this._value8.innerText = '??';
@@ -344,18 +350,30 @@ class FileSidebar {
       // this._value64.innerText = '??';
       // TODO: Set a callback that will know when the block is ready
     } else {
-      this._value8.innerText = this._formatValue(data, 1);
-      this._value16.innerText = this._formatValue(data, 2);
-      this._value32.innerText = this._formatValue(data, 4);
+      this._value8.innerText = this._formatBufferValue(data, 1);
+      this._value16.innerText = this._formatBufferValue(data, 2);
+      this._value32.innerText = this._formatBufferValue(data, 4);
       // this._value64.innerText = this._formatValue(data, 8);
     }
   }
-  _formatValue(buffer, size) {
-    if (buffer.length < size) {
+  /**
+   * @param {Number} value the value to format
+   * @param {Number} bytes the number of bytes being displayed
+   */
+  _formatValue(value, bytes) {
+    let result = value.toString(this._size);
+    if (this._size === 8) {
+      result = "0" + result;
+    } else if (this._size === 16) {
+      result = "0x" + result.padStart(bytes * 2, '0');
+    }
+    return result;
+  }
+  _formatBufferValue(buffer, bytes) {
+    if (buffer.length < bytes) {
       return '(past end)';
     }
-    let v = buffer['readUInt' + (size*8) + (size > 1 ? (this._littleEndian ? 'LE' : 'BE') : '')](0);
-    return `${v.toString()} (0x${v.toString(16).toUpperCase().padStart(size, '0')})`;
+    return this._formatValue(buffer['readUInt' + (bytes*8) + (bytes > 1 ? (this._littleEndian ? 'LE' : 'BE') : '')](0), bytes);
   }
 }
 
