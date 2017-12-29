@@ -26,6 +26,10 @@ module.exports = env => {
         {
           from: './node_modules/xel/xel.min.js',
           to: path.resolve(__dirname, "../app/xel")
+        },
+        {
+          from: './node_modules/xel/images/*',
+          to: path.resolve(__dirname, "../app")
         }
       ])
     ]

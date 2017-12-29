@@ -12,6 +12,7 @@ Thumbs.db
 /app/main.js
 /app/render.js
 /app/xel/
+/app/node_modules/
 
 # Ignore dist files
 /dist
