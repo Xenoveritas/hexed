@@ -4,18 +4,13 @@
 <head>
   <meta charset="utf-8">
   <title>Hexed</title>
+  <link rel="stylesheet" type="text/css" href="node_modules/xel/stylesheets/vanilla.theme.css">
   <script type="application/javascript">
-let theme = 'vanilla';
 if (process.platform === 'darwin') {
-  theme = 'macos';
+  // TODO: Change the theme to macos
 }
-let style = document.createElement('link');
-style.setAttribute('rel', 'stylesheet');
-style.setAttribute('type', 'text/css');
-style.setAttribute('href', `xel/stylesheets/${theme}.theme.css`);
-document.head.append(style);
   </script>
-  <script src="xel/xel.min.js"></script>
+  <script src="node_modules/xel/xel.min.js"></script>
 </head>
 <body tabindex="-1">
   <x-doctabs id="hexed-tabs" maxtabs="1024"></x-doctabs>

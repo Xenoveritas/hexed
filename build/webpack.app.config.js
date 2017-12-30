@@ -17,15 +17,15 @@ module.exports = env => {
       new CopyWebpackPlugin([
         {
           from: './node_modules/xel/stylesheets/vanilla.theme.css',
-          to: path.resolve(__dirname, "../app/xel/stylesheets")
+          to: path.resolve(__dirname, "../app/node_modules/xel/stylesheets")
         },
         {
           from: './node_modules/xel/stylesheets/macos.theme.css',
-          to: path.resolve(__dirname, "../app/xel/stylesheets")
+          to: path.resolve(__dirname, "../app/node_modules/xel/stylesheets")
         },
         {
           from: './node_modules/xel/xel.min.js',
-          to: path.resolve(__dirname, "../app/xel")
+          to: path.resolve(__dirname, "../app/node_modules/xel")
         },
         {
           from: './node_modules/xel/images/*',

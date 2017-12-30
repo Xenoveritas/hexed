@@ -11,7 +11,6 @@ Thumbs.db
 # Ignore webpack generated files
 /app/main.js
 /app/render.js
-/app/xel/
 /app/node_modules/
 
 # Ignore dist files
