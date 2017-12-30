@@ -3,38 +3,20 @@
  * Basic hexed window. Can contain multiple panes (well, WILL be able to) that
  * display the window.
  */
+"use strict";
 
-const { ipcMain, BrowserWindow, dialog } = require('electron'); // Module to create native browser window.
-const debuglog = require('util').debuglog('hex-window');
+import { app, ipcMain, BrowserWindow, dialog } from 'electron'; // Module to create native browser window.
 
-const url = require('url');
-const path = require('path');
+import url from 'url';
+import path from 'path';
 
-/**
- * Internal ID for windows. Just keeps on counting up.
- */
-let id = 0;
+import * as windowManager from './window-manager.js';
 
-/**
- * Map of IDs to windows.
- */
-var hexedWindows = {};
+// Add IPC listeners. These mostly are to maintain our state about what files
+// are open.
+ipcMain.on('open-file', event => event.sender.hexed.showOpenDialog());
 
-ipcMain.on('files-dropped', (event, winId, files) => {
-  let win = hexedWindows[winId];
-  if (win) {
-    win.open(files);
-  }
-});
-
-ipcMain.on('open-file', (event, winId) => {
-  let win = hexedWindows[winId];
-  if (win) {
-    win.showOpenDialog();
-  }
-});
-
-class HexedWindow {
+export default class HexedWindow {
   constructor() {
     this.window = new BrowserWindow({width: 800, height: 600});
     // I have a sneaking suspicion that the actual HTML file will be going away
@@ -45,11 +27,9 @@ class HexedWindow {
       slashes: true
     }));
     this.window.hexed = this;
-    this.id = id++;
-    this._tabId = 0;
-    hexedWindows[this.id] = this;
+    this.window.webContents.hexed = this;
+    this._session = null;
     this._loaded = false;
-    this._pendingMessages = [];
     this._openFiles = [];
     this.window.webContents.on('will-navigate', (event) => {
       // Never load up new contents - prevents drag and drop from loading files
@@ -60,29 +40,26 @@ class HexedWindow {
       this.window.webContents.send('set-id', this.id);
       this.window.emit('ready');
     });
-    this.window.on('closed', (event) => {
-      // Kill this window entirely as it's no longer valid
-      debuglog("Window %s closed", this.id);
-      delete hexedWindows[this.id];
-    });
+    // Add this window to the window manager
+    windowManager.addWindow(this);
+  }
+
+  get id() {
+    return this.window.webContents.id;
   }
 
   /**
-   * Dev utility: reload all HTML for the window.
+   * Dev utility: reload the HTML and then restore contents.
    */
   reload() {
     this.window.webContents.reloadIgnoringCache();
-    if (this._openFiles.length > 0) {
-      // Bind a new ready listener
-      let files = this._openFiles;
-      this._openFiles = [];
-      this.window.once('ready', () => this.open(files));
-    }
   }
+
   on(event, handler) {
     // Pass through to the window
     this.window.on(event, handler);
   }
+
   once(event, handler) {
     this.window.once(event, handler);
   }
@@ -93,11 +70,10 @@ class HexedWindow {
   open(path) {
     if (typeof path == 'string') {
       this.window.webContents.send('open-files', [ path ]);
-      this._openFiles.push(path);
-    } else if (typeof path == 'object' && typeof path.forEach == 'function') {
+    } else if (Array.isArray(path)) {
       let paths = [];
-      path.forEach(function(p) {
-        if (typeof p == 'string') {
+      path.forEach(p => {
+        if (typeof p === 'string') {
           paths.push(p);
         }
       });
@@ -107,22 +83,25 @@ class HexedWindow {
       }
     }
   }
+
   /**
-   * Show the open file dialog, allowing the user to open a file.
+   * Show the open file dialog.
    */
   showOpenDialog() {
     dialog.showOpenDialog(this.window, {
-      treatPackageAsDirectory: true,
-      multiSelections: true
+      properties: [ 'treatPackageAsDirectory', 'multiSelections' ]
     }, files => {
-      if (files) {
-        files.forEach(f => this.open(f));
-      }
+      this.open(files);
     });
   }
+
+  /**
+   * Close an open pane.
+   */
   closePane() {
     this.sendMenu('close-pane');
   }
+
   /**
    * Sends a notification that a menu option was chosen. These menu items have
    * no processing done on the "main process" side and are instead entirely
@@ -132,5 +111,3 @@ class HexedWindow {
     this.window.webContents.send('menu', menu);
   }
 }
-
-module.exports = HexedWindow;

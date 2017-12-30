@@ -12,13 +12,21 @@ function getVersion() {
   }
 }
 
-export class AboutPane extends Pane {
+export default class AboutPane extends Pane {
   constructor() {
     super();
     this.title = 'About';
     this.contents.className += ' about';
     this.contents.innerHTML = '<h1>Hexed ' + getVersion() + '</h1><p>Hexed file viewer.</p><p>Built using Electron ' + process.versions['electron'] + '.</p>';
   }
+
+  getSessionURI() {
+    return "about:hexed";
+  }
 }
 
-module.exports = AboutPane;
+Pane.paneManager.addPaneFactory("about", (url) => {
+  if (url === 'about:hexed') {
+    return new AboutPane();
+  }
+});

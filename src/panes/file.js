@@ -514,11 +514,12 @@ class JumpToPopup {
   }
 }
 
-export class FilePane extends Pane {
+export default class FilePane extends Pane {
   constructor(filename) {
     super();
     this.title = 'Opening...';
     this.filename = filename;
+    this._sessionURL = 'hexedfile:' + encodeURIComponent(this.filename);
     this._openPromise = hexfile.open(filename).then((file) => {
       this.file = file;
       this._init();
@@ -537,6 +538,10 @@ export class FilePane extends Pane {
     if (this._scroller) {
       this._scroller.cursor = value;
     }
+  }
+
+  getSessionURI() {
+    return "hexfile:" + this.filename;
   }
 
   _init() {
@@ -652,4 +657,7 @@ export class FilePane extends Pane {
   }
 }
 
-module.exports = FilePane;
+Pane.paneManager.addPaneFactory("hexfile", (url) => {
+  let filename = decodeURIComponent(url.substring(8));
+  return new FilePane(filename);
+});

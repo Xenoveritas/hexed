@@ -1,26 +1,48 @@
 import EventEmitter from 'events';
 
+import * as paneManager from './pane-manager.js';
+
 /**
  * A Pane within the workspace. A Pane is a simple wrapper around a <hex-pane>
  * element.
  */
-export class Pane extends EventEmitter {
+export default class Pane extends EventEmitter {
   constructor() {
     super();
     this._contents = document.createElement('hexed-pane');
     this._contents.pane = this;
   }
 
+  /**
+   * The contents (a {@code <hexed-pane>}) of this pane.
+   */
   get contents() {
     return this._contents;
   }
 
+  /**
+   * The title.
+   */
   get title() {
     return this._contents.tabTitle;
   }
 
   set title(value) {
     this._contents.tabTitle = value;
+  }
+
+  /**
+   * Get the session URI for this pane. Used to know how to restore the pane
+   * on reopening (or reloading) the window. The default returns null, which
+   * prevents this pane from being restored. Generally each pane should have a
+   * "protocol" (text before a colon) and then a pane-specific part.
+   *
+   * Note that there is no defined mechanism for these URIs. They may be "real"
+   * URLs or they may be abstract URNs. They simply indicate how to look up a
+   * specific Pane in the PaneManager.
+   */
+  getSessionURI() {
+    return null;
   }
 
   /**
@@ -37,6 +59,8 @@ export class Pane extends EventEmitter {
   executeMenuCommand(command) {
   }
 }
+
+Pane.paneManager = paneManager;
 
 class HexedPaneElement extends HTMLElement {
   static get observedAttributes() {
@@ -91,6 +115,5 @@ class HexedPopupElement extends HTMLElement {
     this.style.display = 'flex';
   }
 }
-window.customElements.define('hexed-popup', HexedPopupElement);
 
-module.exports = Pane;
+window.customElements.define('hexed-popup', HexedPopupElement);

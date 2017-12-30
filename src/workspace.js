@@ -75,6 +75,10 @@ class HexedWorkspace extends HTMLElement {
         }
       }
     };
+    this._tabRearrangedListener = (event) => {
+      // For now, just re-fire it.
+      this.dispatchEvent(new CustomEvent("rearrange"));
+    };
   }
 
   get placeholder() {
@@ -133,6 +137,7 @@ class HexedWorkspace extends HTMLElement {
     if (found) {
       // If we found it, inform it that we're activating it.
       value.dispatchEvent(new CustomEvent("activated"));
+      this.dispatchEvent(new CustomEvent("paneactivated", { detail: { tab: value } } ));
     }
   }
 
@@ -175,13 +180,17 @@ class HexedWorkspace extends HTMLElement {
     // Undo anything we've done.
     if (this._doctabs) {
       this._doctabs.removeEventListener('select', this._tabSelectListener);
+      this._doctabs.removeEventListener('rearrange', this._tabRearrangedListener);
     }
     if (doctabs === null) {
       this._doctabs = null;
     } else if (typeof doctabs.openTab === 'function') {
       this._doctabs = doctabs;
-      // TODO: Populate it with tabs as necessary
+      for (let child of this.children) {
+        this._addTab(child);
+      }
       this._doctabs.addEventListener('select', this._tabSelectListener);
+      this._doctabs.addEventListener('rearrange', this._tabRearrangedListener);
     }
   }
 

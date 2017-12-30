@@ -4,7 +4,7 @@
  */
 
 const { app, BrowserWindow, Menu } = require('electron');
-const hexed = require('../main');
+import * as hexed from '../main.js';
 
 function createTemplate() {
   let command = process.platform == 'darwin' ? 'Command' : 'Ctrl';
