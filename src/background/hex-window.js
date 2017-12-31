@@ -89,7 +89,7 @@ export default class HexedWindow {
    */
   showOpenDialog() {
     dialog.showOpenDialog(this.window, {
-      properties: [ 'treatPackageAsDirectory', 'multiSelections' ]
+      properties: [ 'openFile', 'treatPackageAsDirectory', 'multiSelections' ]
     }, files => {
       this.open(files);
     });

@@ -4,11 +4,19 @@
 <head>
   <meta charset="utf-8">
   <title>Hexed</title>
-  <link rel="stylesheet" type="text/css" href="node_modules/xel/stylesheets/vanilla.theme.css">
   <script type="application/javascript">
-if (process.platform === 'darwin') {
-  // TODO: Change the theme to macos
-}
+(function() {
+  let theme = 'vanilla';
+  if (process.platform === 'darwin') {
+    theme = 'macos';
+  }
+  let link = document.createElement('link');
+  link.setAttribute('rel', 'stylesheet');
+  link.setAttribute('type', 'text/css');
+  link.setAttribute('href', `node_modules/xel/stylesheets/${theme}.theme.css`);
+  document.head.append(link);
+  // XEL will pull out this link when it starts so it needs to be inserted first
+})();
   </script>
   <script src="node_modules/xel/xel.min.js"></script>
 </head>
