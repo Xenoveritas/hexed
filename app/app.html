@@ -31,19 +31,47 @@ if (process.platform === 'darwin') {
 -->
       </tbody>
     </table>
-    <x-select class="size">
-      <x-menu>
-        <x-menuitem value="8"><x-label>Octal</x-label></x-menuitem>
-        <x-menuitem value="10"><x-label>Decimal</x-label></x-menuitem>
-        <x-menuitem value="16"><x-label>Hexidecimal</x-label></x-menuitem>
-      </x-menu>
-    </x-select>
-    <x-select class="endian">
-      <x-menu>
-        <x-menuitem value="little"><x-label>Little Endian</x-label></x-menuitem>
-        <x-menuitem value="big"><x-label>Big Endian</x-label></x-menuitem>
-      </x-menu>
-    </x-select>
+    <x-box vertical class="display-options">
+      <x-card>
+        <main>
+          <x-select id="size">
+            <x-menu>
+              <x-menuitem value="8"><x-label>Octal</x-label></x-menuitem>
+              <x-menuitem value="10"><x-label>Decimal</x-label></x-menuitem>
+              <x-menuitem value="16"><x-label>Hexidecimal</x-label></x-menuitem>
+            </x-menu>
+          </x-select>
+        </main>
+      </x-card>
+      <x-card>
+        <main>
+          <x-radios id="endian">
+            <x-box>
+              <x-radio id="little-endian" value="little"></x-radio>
+              <x-label for="little-endian">Little Endian</x-label>
+            </x-box>
+            <x-box>
+              <x-radio id="big-endian" value="big"></x-radio>
+              <x-label for="big-endian">Big Endian</x-label>
+            </x-box>
+          </x-radios>
+        </main>
+      </x-card>
+      <x-card>
+        <main>
+          <x-radios id="sign">
+            <x-box>
+              <x-radio id="signed" value="signed"></x-radio>
+              <x-label for="signed">Signed</x-label>
+            </x-box>
+            <x-box>
+              <x-radio id="unsigned" value="unsigned"></x-radio>
+              <x-label for="unsigned">Unsigned</x-label>
+            </x-box>
+          </x-radios>
+        </main>
+      </x-card>
+    </x-box>
   </template>
   <template id="hex-file-line-template"><span class="gutter">0</span><span class="data">00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span><span class="decoded">0000000000000000</span></template>
   <script src="render.js"></script>

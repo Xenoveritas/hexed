@@ -10,6 +10,7 @@ import Pane from '../pane.js';
 import Scroller from '../scroller.js';
 import hexfile from '../hexfile.js';
 import StringsPane from './strings.js';
+
 const USE_OSX_SHORTCUTS = process.platform === 'darwin',
   htmlEscapes = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
 
@@ -362,11 +363,23 @@ class FileSidebar {
   constructor(pane) {
     this._littleEndian = true;
     this._size = 10;
+    this._signed = false;
     this.pane = pane;
+    // Need an ID to link some controls up later.
+    let id = `${pane.contents.getAttribute('id')}-sidebar`;
     this.pane.contents.append(this._sidebar = document.createElement('hexed-sidebar'));
     this._sidebar.className = 'hex-file-stats';
     let template = document.getElementById('hex-file-stats-template');
-    this._sidebar.append(document.importNode(template.content, true));
+    // Clone the template.
+    let clone = document.importNode(template.content, true);
+    // Can't insert it quite yet because we have to go through and munge IDs.
+    for (let node of clone.querySelectorAll('[id]')) {
+      node.setAttribute('id', id + '-' + node.getAttribute('id'));
+    }
+    for (let node of clone.querySelectorAll('[for]')) {
+      node.setAttribute('for', id + '-' + node.getAttribute('for'));
+    }
+    this._sidebar.append(clone);
     this._position = this._sidebar.querySelector('.position');
     this._value8 = this._sidebar.querySelector('.type-int8');
     this._value16 = this._sidebar.querySelector('.type-int16');
@@ -376,16 +389,22 @@ class FileSidebar {
     // this._value64 = this._sidebar.querySelector('.type-int64');
     // this._valueFloat = this._sidebar.querySelector('.type-float');
     // this._valueFloat = this._sidebar.querySelector('.type-double');
-    this._sizeSelector = this._sidebar.querySelector('x-select.size');
+    this._sizeSelector = this._sidebar.querySelector('x-select#' + id + '-size');
     this._sizeSelector.value = this._size.toString();
     this._sizeSelector.addEventListener('change', (event) => {
       this._size = parseInt(this._sizeSelector.value);
       this.update();
     });
-    this._littleEndianSelector = this._sidebar.querySelector('x-select.endian');
-    this._littleEndianSelector.value = this._littleEndian ? 'little' : 'big';
-    this._littleEndianSelector.addEventListener('change', (event) => {
-      this._littleEndian = this._littleEndianSelector.value === 'little';
+    this._littleEndianRadios = this._sidebar.querySelector('x-radios#' + id + '-endian');
+    this._littleEndianRadios.value = this._littleEndian ? 'little' : 'big';
+    this._littleEndianRadios.addEventListener('toggle', (event) => {
+      this._littleEndian = this._littleEndianRadios.value === 'little';
+      this.update();
+    });
+    this._signRadios = this._sidebar.querySelector('x-radios#' + id + '-sign');
+    this._signRadios.value = this._signed ? 'signed' : 'unsigned';
+    this._signRadios.addEventListener('toggle', (event) => {
+      this._signed = this._signRadios.value === 'signed';
       this.update();
     });
     this.update();
@@ -414,9 +433,17 @@ class FileSidebar {
   _formatValue(value, bytes) {
     let result = value.toString(this._size);
     if (this._size === 8) {
-      result = "0" + result;
+      if (result[0] === '-') {
+        result = "-0" + result.substring(1);
+      } else {
+        result = "0" + result;
+      }
     } else if (this._size === 16) {
-      result = "0x" + result.padStart(bytes * 2, '0');
+      if (result[0] === '-') {
+        result = "-0x" + result.substring(1).padStart(bytes * 2, '0');
+      } else {
+        result = "0x" + result.padStart(bytes * 2, '0');
+      }
     }
     return result;
   }
@@ -424,7 +451,8 @@ class FileSidebar {
     if (buffer.length < bytes) {
       return '(past end)';
     }
-    return this._formatValue(buffer['readUInt' + (bytes*8) + (bytes > 1 ? (this._littleEndian ? 'LE' : 'BE') : '')](0), bytes);
+    return this._formatValue(buffer[`read${this._signed ? '' : 'U'}Int${bytes*8
+      }${bytes > 1 ? (this._littleEndian ? 'LE' : 'BE') : ''}`](0), bytes);
   }
 }
 
