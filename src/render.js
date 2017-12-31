@@ -175,7 +175,7 @@ contents.addEventListener('dragover', (event) => {
 contents.addEventListener('drop', (event) => {
   if (event.dataTransfer.files.length > 0) {
     let files = [];
-    for (let file of event.dataTransfer.files.length) {
+    for (let file of event.dataTransfer.files) {
       files.push(file.path);
     }
     hexed.openFiles(files);
