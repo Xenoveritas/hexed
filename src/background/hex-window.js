@@ -48,13 +48,6 @@ export default class HexedWindow {
     return this.window.webContents.id;
   }
 
-  /**
-   * Dev utility: reload the HTML and then restore contents.
-   */
-  reload() {
-    this.window.webContents.reloadIgnoringCache();
-  }
-
   on(event, handler) {
     // Pass through to the window
     this.window.on(event, handler);

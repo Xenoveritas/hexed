@@ -45,19 +45,10 @@ function createTemplate() {
           accelerator: 'Alt+' + command + '+J',
           click: function() { BrowserWindow.getFocusedWindow().hexed.sendMenu('run-javascript'); }
         },*/
-        {
-          type: 'separator'
-        },
-        {
-          label: 'Reload',
-          accelerator: command + '+R',
-          click: function() { BrowserWindow.getFocusedWindow().hexed.reload(); }
-        },
-        {
-          label: 'Toggle DevTools',
-          accelerator: command + '+Shift+I',
-          click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
-        },
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'forcereload' },
+        { role: 'toggledevtools' },
       ]
     },
     {
@@ -75,7 +66,14 @@ function createTemplate() {
       ]
     },
     {
-      label: 'Help',
+      role: 'window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'close' }
+      ]
+    },
+    {
+      role: 'help',
       submenu: [
         {
           label: 'About',
@@ -91,44 +89,25 @@ function createTemplate() {
     template.unshift({
       'label': 'Hexed',
       'submenu': [
-        {
-          label: 'About Hexed',
-          selector: 'orderFrontStandardAboutPanel:'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          label: 'Services',
-          submenu: []
-        },
-        {
-          type: 'separator'
-        },
-        {
-          label: 'Hide Hexed',
-          accelerator: 'Command+H',
-          selector: 'hide:'
-        },
-        {
-          label: 'Hide Others',
-          accelerator: 'Command+Shift+H',
-          selector: 'hideOtherApplications:'
-        },
-        {
-          label: 'Show All',
-          selector: 'unhideAllApplications:'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          label: 'Quit',
-          accelerator: 'Command+Q',
-          selector: 'terminate:'
-        }
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services', submenu: []},
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideothers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
       ]
     });
+    // And make the Window menu more macOS-like
+    template[4].submenu = [
+      { role: 'close' },
+      { role: 'minimize' },
+      { role: 'zoom' },
+      { type: 'separator' },
+      { role: 'front' }
+    ];
   } else {
     // Place the Exit/Quit menu item as appropriate:
     template[0].submenu.push(
