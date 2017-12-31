@@ -66,13 +66,6 @@ function createTemplate() {
       ]
     },
     {
-      role: 'window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'close' }
-      ]
-    },
-    {
       role: 'help',
       submenu: [
         {
@@ -84,7 +77,7 @@ function createTemplate() {
   ];
   // TODO: Only do this when not on OS X and add an approriate Quit option when
   // on OS X
-  if (process.platform == 'darwin') {
+  if (process.platform === 'darwin') {
     // On OS X, we need to insert the app menu as the first menu
     template.unshift({
       'label': 'Hexed',
@@ -100,27 +93,23 @@ function createTemplate() {
         { role: 'quit' }
       ]
     });
-    // And make the Window menu more macOS-like
-    template[4].submenu = [
-      { role: 'close' },
-      { role: 'minimize' },
-      { role: 'zoom' },
-      { type: 'separator' },
-      { role: 'front' }
-    ];
+    // The Window menu is pretty much a macOS-ism, so insert it prior to the
+    // last element in the template.
+    template.splice(template.length - 1, 0, {
+      role: 'window',
+      submenu: [
+        { role: 'close' },
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' }
+      ]
+    });
   } else {
     // Place the Exit/Quit menu item as appropriate:
     template[0].submenu.push(
-      {
-        type: 'separator'
-      },
-      {
-        label: 'Exit',
-        click: function() {
-          // TODO: Not this
-          app.quit();
-        }
-      }
+      { type: 'separator' },
+      { role: 'quit' }
     );
   }
   return template;
