@@ -19,14 +19,6 @@ export default class AboutPane extends Pane {
     this.contents.className += ' about';
     this.contents.innerHTML = '<h1>Hexed ' + getVersion() + '</h1><p>Hexed file viewer.</p><p>Built using Electron ' + process.versions['electron'] + '.</p>';
   }
-
-  getSessionURI() {
-    return "about:hexed";
-  }
 }
 
-Pane.paneManager.addPaneFactory("about", (url) => {
-  if (url === 'about:hexed') {
-    return new AboutPane();
-  }
-});
+Pane.paneManager.addPaneFactory(AboutPane);

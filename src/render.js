@@ -44,6 +44,10 @@ class Hexed {
     ipcRenderer.on('menu', (event, command) => {
       this.doMenuCommand(command);
     });
+    // Before the page is unloaded, do one last save session
+    window.addEventListener('beforeunload', (event) => {
+      this._saveSession();
+    });
     this._restoreSession();
   }
 
@@ -110,11 +114,11 @@ class Hexed {
     // Go through the open panes and figure out what our session is.
     let session = [];
     for (let child of this._workspace.children) {
-      let url = child.pane ? child.pane.getSessionURI() : null;
-      if (url) {
-        session.push(url);
+      let info = child.pane ? child.pane.getSessionInfo() : null;
+      if (info) {
+        session.push(info);
       } else {
-        console.log(`Warning: will be unable to restore tab (no session URL)`);
+        console.log(`Warning: will be unable to restore tab (no session info)`);
       }
     }
     sessionStorage.setItem("hexedSession", JSON.stringify(session));
@@ -130,9 +134,9 @@ class Hexed {
         console.log(ex);
         return;
       }
-      for (let url of session) {
+      for (let info of session) {
         try {
-          this._restoreTab(url);
+          this._restoreTab(info);
         } catch (ex) {
           console.log(`Unable to restore saved session URL "${url}":`);
           console.log(ex);
@@ -141,12 +145,19 @@ class Hexed {
     }
   }
 
-  _restoreTab(url) {
-    let pane = createPane(url, this);
+  _restoreTab(info) {
+    if (info === 'AboutPane') {
+      // Special, since this is supposed to be a singleton.
+      // TODO: Make singletons an actual "thing" as things like "preferences"
+      // will also be singletons.
+      this.showAbout();
+      return;
+    }
+    let pane = createPane(info, this);
     if (pane) {
       this.addPane(pane);
     } else {
-      console.log(`Unable to restore pane for URL "${url}"`);
+      console.log(`Unable to restore pane for session info "${JSON.stringify(info)}"`);
     }
   }
 };

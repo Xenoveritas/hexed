@@ -6,25 +6,33 @@
 
 let paneFactories = new Map();
 
-export function addPaneFactory(urlPrefix, factory) {
-  if (typeof factory !== 'function')
-    throw new Error(`Invalid factory ${factory}`);
-  paneFactories.set(urlPrefix, factory);
+/**
+ * Add a factory function to create panes with the given ID. The factory
+ * function will receive the SessionInfo object saved in the session when it
+ * was saved.
+ */
+export function addPaneFactory(id, factory) {
+  if (arguments.length === 1 && typeof id === 'function') {
+    paneFactories.set(id.name, () => { new id(); });
+  } else {
+    if (typeof factory !== 'function')
+      throw new Error(`Invalid factory ${factory}`);
+    paneFactories.set(id, factory);
+  }
 }
 
-export function createPane(url, hexed) {
-  if (typeof url !== 'string') {
-    throw new Error(`Invalid URL type ${typeof url}`);
+export function createPane(info, hexed) {
+  let id = info;
+  if (typeof info === 'object') {
+    id = info.id;
   }
-  let index = url.indexOf(':');
-  if (index < 0) {
-    throw new Error(`No ":" in URL ${url}`);
+  if (typeof id !== 'string') {
+    throw new Error(`Cannot restore ${info} (missing or bad ID).`);
   }
-  let prefix = url.substring(0, index);
-  let factory = paneFactories.get(prefix);
+  let factory = paneFactories.get(id);
   if (factory) {
-    return factory(url, hexed);
+    return factory(hexed, info);
   } else {
-    throw new Error(`Unable to handle URL type ${prefix} (in "${url}")`);
+    throw new Error(`Unable to restore ${id} (unknown type)`);
   }
 }

@@ -182,6 +182,14 @@ class Scroller extends EventEmitter {
     }
   }
 
+  get scrollY() {
+    return this._verticalOffset;
+  }
+
+  set scrollY(y) {
+    this.scrollTo(y);
+  }
+
   /**
    * Gets the DOM object for a given line, assuming it's currently visible. If
    * it isn't, this returns <code>null</code>.

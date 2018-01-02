@@ -513,11 +513,20 @@ class JumpToPopup {
   jump() {
     // Parse the jump address
     let address = this._address.value;
-    console.log("Jump to " + address);
+    if (address.length === 0) {
+      return;
+    }
+    let relative = false;
+    if (address[0] === '-') {
+      relative = -1;
+      address = address.substring(1);
+    } else if (address[0] === '+') {
+      relative = 1;
+      address = address.substring(1);
+    }
     let m = /^(?:0x|[$#])([0-9A-Fa-f]{1,16})$/.exec(address);
     if (m) {
       address = parseInt(address, 16);
-      console.log("Hex: " + address);
     } else if (/^0[0-7]{1,21}$/.test(address)) {
       address = parseInt(address, 8);
     } else if (/^[0-9]{1,20}$/.test(address)) {
@@ -526,7 +535,9 @@ class JumpToPopup {
       this._address.error = "Bad format";
       return;
     }
-    if (!this.filepane.jumpTo(address)) {
+    if (relative) {
+      this.filepane.jumpToRelative(address * relative);
+    } else if (!this.filepane.jumpTo(address)) {
       this._address.error = "Address out of range";
     }
     this.filepane.focus();
@@ -545,9 +556,21 @@ class JumpToPopup {
 export default class FilePane extends Pane {
   constructor(filename) {
     super();
+    if (typeof filename === 'object') {
+      let cursor = filename.cursor;
+      let scrollY = filename.scrollY;
+      this.once('init', () => {
+        this._scroller.cursor = cursor;
+        this._scroller.scrollTo(scrollY);
+      });
+      filename = filename.filename;
+    }
     this.title = 'Opening...';
     this.filename = filename;
-    this._sessionURL = 'hexedfile:' + encodeURIComponent(this.filename);
+    this._sessionInfo = {
+      id: 'hexedfile',
+      filename: filename
+    };
     this._openPromise = hexfile.open(filename).then((file) => {
       this.file = file;
       this._init();
@@ -568,8 +591,12 @@ export default class FilePane extends Pane {
     }
   }
 
-  getSessionURI() {
-    return "hexfile:" + this.filename;
+  getSessionInfo() {
+    if (this._scroller) {
+      this._sessionInfo.cursor = this._scroller.cursor;
+      this._sessionInfo.scrollY = this._scroller.scrollY;
+    }
+    return this._sessionInfo;
   }
 
   _init() {
@@ -610,6 +637,7 @@ export default class FilePane extends Pane {
     })(this, this._scroller);
     // Keyboard support
     this._container.setAttribute('tabindex', '0');
+    this.emit('init');
   }
 
   /**
@@ -665,6 +693,10 @@ export default class FilePane extends Pane {
     }
   }
 
+  jumpToRelative(offset) {
+    this._scroller.cursor += offset;
+  }
+
   /**
    * This is likely going to be moved up a level.
    */
@@ -685,7 +717,6 @@ export default class FilePane extends Pane {
   }
 }
 
-Pane.paneManager.addPaneFactory("hexfile", (url) => {
-  let filename = decodeURIComponent(url.substring(8));
-  return new FilePane(filename);
+Pane.paneManager.addPaneFactory("hexedfile", (hexed, info) => {
+  return new FilePane(info);
 });

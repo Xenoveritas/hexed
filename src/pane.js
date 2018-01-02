@@ -32,17 +32,21 @@ export default class Pane extends EventEmitter {
   }
 
   /**
-   * Get the session URI for this pane. Used to know how to restore the pane
-   * on reopening (or reloading) the window. The default returns null, which
-   * prevents this pane from being restored. Generally each pane should have a
-   * "protocol" (text before a colon) and then a pane-specific part.
+   * Get a SessionInfo for this pane. This information should provide enough
+   * information to restore the pane.
    *
-   * Note that there is no defined mechanism for these URIs. They may be "real"
-   * URLs or they may be abstract URNs. They simply indicate how to look up a
-   * specific Pane in the PaneManager.
+   * The return value may either be a simple string (in which case it's the ID
+   * of the pane, which can be used to create a new instance of it), or an
+   * actual Object, which will be saved as JSON and MUST contain an "id" that
+   * indicates the Pane to restore.
+   *
+   * The same object may be returned on each call.
+   *
+   * The default inplementation returns the class name as determined by
+   * <code>Object.getPrototypeOf(this).constructor.name</code>.
    */
-  getSessionURI() {
-    return null;
+  getSessionInfo() {
+    return Object.getPrototypeOf(this).constructor.name;
   }
 
   /**
