@@ -4,17 +4,17 @@
  */
 "use strict";
 
-const fs = require('fs'),
-  path = require('path'),
-  EventEmitter = require('events'),
-  LRU = require('lru-cache');
+import fs from 'fs';
+import path from 'path';
+import EventEmitter from 'events';
+import LRU from 'lru-cache';
 
 const debuglog = require('./debuglog').debuglog('hexfile');
 
 /**
  * Size of a "block" - currently set to 4KB.
  */
-const BLOCK_SIZE = 4096;
+export const BLOCK_SIZE = 4096;
 
 /**
  * A "block". A block is simply a block of the file that gets kept around cached
@@ -84,7 +84,7 @@ class Block {
 /**
  * A hex file.
  */
-class HexFile extends EventEmitter {
+export default class HexFile extends EventEmitter {
   /**
    * Create a new file. The file isn't necessarily "ready" when returned, as
    * the stats still need to be loaded. Use {@link module:hexfile#open()} to
@@ -377,7 +377,7 @@ class HexFile extends EventEmitter {
   }
 }
 
-exports.open = function(filename) {
+export function open(filename) {
   return new Promise((resolve, reject) => {
     fs.open(filename, 'r', (err, fd) => {
       if (err) {
@@ -388,4 +388,5 @@ exports.open = function(filename) {
     })
   });
 }
-exports.HexFile = HexFile;
+
+HexFile.open = open;

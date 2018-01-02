@@ -81,6 +81,29 @@
       </x-card>
     </x-box>
   </template>
+  <template id="hex-file-jump-to-template">
+    <hexed-popup class="jump-to">
+      <x-input></x-input>
+      <x-button><x-label>Jump To</x-label></x-button>
+    </hexed-popup>
+  </template>
+  <template id="hex-file-find-template">
+    <hexed-popup class="find">
+      <x-box vertical style="align-items: stretch; flex-grow: 1;">
+        <x-box>
+          <x-input style="flex-grow: 1; max-width: none;"></x-input>
+          <!-- For now only strings can be searched for
+          <x-select style="margin-left: 0.5em;">
+            <x-menu>
+              <x-menuitem value="bytes" selected="true"><x-label>Bytes</x-label></x-menuitem>
+              <x-menuitem value="string"><x-label>String</x-label></x-menuitem>
+            </x-menu>
+          </x-select> -->
+          <x-button style="margin-left: 0.5em;"><x-label>Find</x-label></x-button>
+        </x-box>
+      </x-box>
+    </hexed-popup>
+  </template>
   <template id="hex-file-line-template"><span class="gutter">0</span><span class="data">00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span><span class="decoded">0000000000000000</span></template>
   <script src="render.js"></script>
 </body>

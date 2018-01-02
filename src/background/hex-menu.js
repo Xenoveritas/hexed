@@ -3,7 +3,7 @@
  * Module for creating the menus.
  */
 
-const { app, BrowserWindow, Menu } = require('electron');
+import { app, BrowserWindow, Menu } from 'electron';
 import * as hexed from '../main.js';
 
 function createTemplate() {
@@ -54,11 +54,11 @@ function createTemplate() {
     {
       label: 'Search',
       submenu: [
-        /*{
+        {
           label: 'Find...',
           accelerator: command + '+F',
           click: function() { BrowserWindow.getFocusedWindow().hexed.sendMenu('find'); }
-        },*/
+        },
         {
           label: 'Strings...',
           click: function() { BrowserWindow.getFocusedWindow().hexed.sendMenu('strings'); }

@@ -17,7 +17,7 @@ const USE_OSX_SHORTCUTS = process.platform === 'darwin';
  * {@link #createLineContent} and {@link #setLineContent} methods to generate
  * useful content.
  */
-class Scroller extends EventEmitter {
+export default class Scroller extends EventEmitter {
   /**
    * Create a new Scroller within the given container.
    */
@@ -534,5 +534,3 @@ class Scroller extends EventEmitter {
 * The absolute minimum line height we allow.
 */
 Scroller.MINIMUM_LINE_HEIGHT = 8;
-
-module.exports = Scroller;
