@@ -18,7 +18,6 @@ class StringsScroller extends Scroller {
     super(container);
     this._offsets = [];
     this._strings = [];
-    container.style.position = 'absolute';
     this.setTotalLines(0);
   }
 

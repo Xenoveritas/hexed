@@ -27,14 +27,16 @@ class Scroller extends EventEmitter {
      * The containing element as defined on creation.
      */
     this.container = container;
-    // Set up some CSS
-    this.container.className += ' scroller';
-    this.container.style.position = 'relative';
-    this.container.setAttribute('tabindex', '0');
+    this._scrollContainer = document.createElement('div');
+    this._scrollContainer.className = 'scroller';
+    this._scrollContainer.setAttribute('style', 'position: relative; width: 100%; height: 100%;');
+    this._scrollContainer.setAttribute('tabindex', '0');
+    this.container.append(this._scrollContainer);
     // Add a container to hold the various lines.
     this._lineContainer = document.createElement('div');
-    this.container.appendChild(this._lineContainer);
-    this._scrollBar = new Scrollbar(this.container);
+    this._lineContainer.setAttribute('style', 'width: 100%; height: 100%;');
+    this._scrollContainer.append(this._lineContainer);
+    this._scrollBar = new Scrollbar(this._scrollContainer);
 
     /**
      * The height of a single line. All lines must be the same height. By default
@@ -97,7 +99,7 @@ class Scroller extends EventEmitter {
       // is probably Chrome-specific. Who cares.
       this.scrollBy(-event.wheelDeltaY);
     };
-    this.container.addEventListener('mousewheel', this._wheelListener, { passive: true });
+    this._scrollContainer.addEventListener('mousewheel', this._wheelListener, { passive: true });
     // Add key listeners
     this._keyListener = (event) => {
       if (this.onkeydown(event) === true)
@@ -152,7 +154,7 @@ class Scroller extends EventEmitter {
       }
       event.preventDefault();
     };
-    this.container.addEventListener('keydown', this._keyListener, false);
+    this._scrollContainer.addEventListener('keydown', this._keyListener, false);
     // We still need to generate lines for the available space, but we need to
     // defer that until the document is ready and actually laid out if it
     // currently isn't.

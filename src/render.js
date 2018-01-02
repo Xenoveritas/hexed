@@ -138,7 +138,7 @@ class Hexed {
         try {
           this._restoreTab(info);
         } catch (ex) {
-          console.log(`Unable to restore saved session URL "${url}":`);
+          console.log(`Unable to restore saved session info ${JSON.stringify(info)}:`);
           console.log(ex);
         }
       }
@@ -157,7 +157,7 @@ class Hexed {
     if (pane) {
       this.addPane(pane);
     } else {
-      console.log(`Unable to restore pane for session info "${JSON.stringify(info)}"`);
+      throw new Error("No pane created.");
     }
   }
 };
